@@ -447,8 +447,6 @@ def draw(plot, \
 #        legend_.SetBorderSize(1)
         for l in histos:
             for h in l:
-                if hasattr(h.sample, "notInLegend"):
-                    if h.sample.notInLegend: continue
                 if hasattr(h, "texName"): 
                     legend_text = h.texName
                 elif hasattr(h, "legendText"): 

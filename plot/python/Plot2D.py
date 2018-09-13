@@ -66,8 +66,8 @@ class Plot2D( PlotBase ):
         self.histo_class     = histo_class      if histo_class     is not None else Plot2D.defaultHistoClass
 
     @classmethod
-    def fromHisto(cls, name, histos, texX = defaultTexX, texY = defaultTexY, binning=None):
-        res = cls(stack=None, name=name, attribute=None, binning=binning, selectionString = None, weight = None, histo_class = None,\
+    def fromHisto(cls, name, histos, texX = defaultTexX, texY = defaultTexY):
+        res = cls(stack=None, name=name, attribute=None, binning=None, selectionString = None, weight = None, histo_class = None,\
             texX = texX, texY = texY)
         res.histos = histos
         return res
