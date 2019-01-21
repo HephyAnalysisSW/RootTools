@@ -505,7 +505,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if n==1: return self
 
         if not n>=1:
-            raise ValueError( "Can not split into: '%r'" % n )
+            raise ValueError( "Cannot split into: '%r'" % n )
 
         files = self.files
         if shuffle: random.shuffle( files ) 
@@ -517,7 +517,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             return [ Sample( 
                     name            = self.name+"_%i" % n_sample, 
                     treeName        = self.treeName, 
-                    files           = chunks[n_sample], 
+                    files           = chunks[n_sample],
+                    xSection        = self.xSection,
                     normalization   = self.normalization, 
                     selectionString = self.selectionString, 
                     weightString    = self.weightString, 
@@ -530,6 +531,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                         name            = self.name,
                         treeName        = self.treeName,
                         files           = chunks[nSub],
+                        xSection        = self.xSection,
                         normalization   = self.normalization,
                         selectionString = self.selectionString,
                         weightString    = self.weightString,
