@@ -122,18 +122,25 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
                 for plot in plots_for_sample:
                     for index in plot.sample_indices:
 
-                        #Get x,y or just x
-                        TH_fill_args = [ filler( r.event, sample ) for filler in plot.store_fillers ]
-
-                        # Experimental. Can make a cut by having an attribute return None 
-                        if None in TH_fill_args: continue
-
                         #Get weight
                         tmp_weight_ = plot.tmp_weight_[index[0]][index[1]]
                         weight  = 1 if tmp_weight_ is None else tmp_weight_( r.event, sample )
                         if sample.weight is not None: weight *= sample.weight( r.event, sample )
-                        TH_fill_args.append( weight*sample_scale_factor )
-                        plot.histos[index[0]][index[1]].Fill( *TH_fill_args )
+                        weight*=sample_scale_factor
+
+                        #Get x,y or just x which could be lists
+                        TH_fill_args = [ filler( r.event, sample ) for filler in plot.store_fillers ]
+                        # loop over vector args
+                        if isinstance( TH_fill_args[0], (tuple, list) ):
+                            for args in zip( *TH_fill_args ):
+                                args += (weight,)
+                                plot.histos[index[0]][index[1]].Fill( *args )
+                        # scalar args
+                        else:
+                            # Experimental. Can make a cut by having an attribute return None 
+                            if None in TH_fill_args: continue
+                            TH_fill_args.append(weight)
+                            plot.histos[index[0]][index[1]].Fill( *TH_fill_args )
 
                 if max_events > 0: 
                     counter += 1
