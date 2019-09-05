@@ -5,6 +5,7 @@
 import sys
 import logging
 import ROOT
+import os
 
 #RootTools
 from RootTools.core.standard import *
@@ -25,7 +26,7 @@ logger = get_logger(args.logLevel, logFile = None)
 
 
 # from files
-s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
+s0 = Sample.fromFiles("s0", files = [os.path.expandvars("$CMSSW_BASE/src/RootTools/examples/example_data/file_0.root")], treeName = "Events")
 
 read_variables =  [ TreeVariable.fromString( "nJet/I"), TreeVariable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
                 + [ TreeVariable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
@@ -51,3 +52,5 @@ reader.start()
 maker.start()
 while reader.run():
     maker.run()
+
+logger.info("Success!")
