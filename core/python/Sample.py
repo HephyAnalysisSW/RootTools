@@ -211,17 +211,23 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         files = []
         for d in directories:
             cmd = [ "xrdfs", redirector, "ls", d ]
+            fileList = []
             for i in range(10):
                 try:
                     fileList = [ file for file in subprocess.check_output( cmd ).split("\n")[:-1] ]
                     break
                 except:
                     if i<9: pass
+            counter = 0
             for filename in fileList:
                 if filename.endswith(".root"):
                     files.append( redirector + os.path.join( d, filename ) )
+                    counter += 1
                 if maxN is not None and maxN>0 and len(files)>=maxN:
                     break
+            if counter==0:
+                raise helpers.EmptySampleError( "No root files found in directory %s." %d )
+
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
@@ -710,7 +716,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 except IOError as e:
                     logger.error( "Could not load file %s", f )
                     #raise e
-
+            if counter==0:
+                raise helpers.EmptySampleError( "No root files for sample %s." %self.name ) 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
         # Add friends
