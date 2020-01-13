@@ -431,6 +431,9 @@ def draw(plot, \
                 h.GetYaxis().SetTitleOffset( 1.6 )
 
             for modification in histModifications: modification(h)
+            if hasattr( plot, "histModifications") and type( plot.histModifications ) == type([]):
+                for modification in plot.histModifications:
+                    modification(histo)
             #if drawOption=="e1": dataHist = h
             h.Draw(drawOption+same)
             same = "same"
@@ -639,7 +642,10 @@ def draw2D(plot, \
     ROOT.gPad.SetRightMargin(0.15)
 
     for modification in histModifications: modification(histo)
-
+    if hasattr( plot, "histModifications") and type( plot.histModifications ) == type([]):
+        for modification in plot.histModifications:
+            modification(histo)
+        
     histo.Draw(drawOption)
 
     c1.RedrawAxis()
