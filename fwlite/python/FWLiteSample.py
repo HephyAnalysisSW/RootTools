@@ -86,13 +86,65 @@ class FWLiteSample ( object ):
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False):
+    def fromDPMDirectory(cls, name, directory, prefix='root://hephyse.oeaw.ac.at/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False):
+
+        maxN = maxN if maxN is not None and maxN>0 else None
+        limit = maxN if maxN else 0
+
+        n_cache_files = 0 
+        # Don't use the cache on partial queries
+        if dbFile is not None and ( maxN<0 or maxN is None ):
+            cache = Database(dbFile, "fileCache", ["name"]) 
+            n_cache_files = cache.contains({'name':name})
+        else:
+            cache = None
+
+        if n_cache_files and not overwrite:
+            files = [ f["value"] for f in cache.getDicts({'name':name}) ]
+            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
+        else:
+            if overwrite:
+                cache.removeObjects({"name":name})
+
+            def _dasPopen(dbs):
+                if 'LSB_JOBID' in os.environ:
+                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                logger.info('DAS query\t: %s',  dbs)
+                return os.popen(dbs)
+
+            files = []
+            dbs='xrdfs %s ls %s'%(prefix,directory)
+            dbsOut = _dasPopen(dbs).readlines()
+            
+            for line in dbsOut:
+                if line.startswith('/store/'):
+                    line = line.rstrip()
+                    filename = line
+                    try:
+                        if skipCheck or helpers.checkRootFile(prefix+filename):
+                            files.append(filename)
+                    except IOError:
+                        logger.warning( "IOError for file %s. Skipping.", filename )
+
+                    if cache is not None:
+                        cache.add({"name":name}, filename, save=True)
+
+        if limit>0: files=files[:limit]
+
+        result = cls(name, files=[prefix+file for file in files], texName = texName)
+        result.DASname = prefix + directory.rstrip("/")
+        return result
+
+
+    @classmethod
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
 
         maxN = maxN if maxN is not None and maxN>0 else None
         limit = maxN if maxN else 0
+        DASname = dataset.rstrip('/')
 
         n_cache_files = 0 
         # Don't use the cache on partial queries
@@ -130,9 +182,8 @@ class FWLiteSample ( object ):
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
-            sampleName = dataset.rstrip('/')
-            query, qwhat = sampleName, "dataset"
-            if "#" in sampleName: qwhat = "block"
+            query, qwhat = DASname, "dataset"
+            if "#" in DASname: qwhat = "block"
 
             dbs='dasgoclient -query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
             dbsOut = _dasPopen(dbs).readlines()
@@ -141,9 +192,9 @@ class FWLiteSample ( object ):
             for line in dbsOut:
                 if line.startswith('/store/'):
                     line = line.rstrip()
-                    filename = prefix+line
+                    filename = line
                     try:
-                        if helpers.checkRootFile(filename):
+                        if skipCheck or helpers.checkRootFile(prefix+filename):
                             files.append(filename)
                     except IOError:
                         logger.warning( "IOError for file %s. Skipping.", filename )
@@ -152,7 +203,10 @@ class FWLiteSample ( object ):
                         cache.add({"name":name}, filename, save=True)
 
         if limit>0: files=files[:limit]
-        return cls(name, files=files, texName = texName)
+
+        result = cls(name, files=[prefix+file for file in files], texName = texName)
+        result.DASname = DASname
+        return result
 
     @classmethod
     def combine(cls, name, samples, texName = None, maxN = None, color = 0):
@@ -171,7 +225,7 @@ class FWLiteSample ( object ):
                    texName = texName
             )
 
-    def split( self, n):
+    def split( self, n, nSub = None):
         ''' Split sample into n sub-samples
         '''
 
@@ -182,11 +236,19 @@ class FWLiteSample ( object ):
        
         chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
 
-        return [ FWLiteSample( 
+        splitSamps = [ FWLiteSample( 
                 name            = self.name+"_%i" % n_sample, 
                 files           = chunks[n_sample], 
                 color           = self.color, 
                 texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+
+        if nSub == None:
+            return splitSamps
+        else:
+            if nSub<len(chunks):
+                return splitSamps[nSub]
+            else:
+                return None
 
     def fwliteReader(self, **kwargs):
         ''' Return a FWLiteReader class for the sample

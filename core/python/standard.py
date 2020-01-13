@@ -1,4 +1,5 @@
 from RootTools.core.Sample import Sample
+from RootTools.core.HEPMCSample import HEPMCSample
 from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 from RootTools.core.TreeReader import TreeReader
 from RootTools.core.MultiReader import MultiReader

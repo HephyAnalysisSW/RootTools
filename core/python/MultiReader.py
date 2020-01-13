@@ -19,7 +19,7 @@ class MultiReader( LooperBase ):
             Will run over all common events defined by the return value of keys.
         '''
 
-        if not len(args)%2==0 or len(args)==0:
+        if len(args)==0:
             logger.error( "Can't initialze MultiReader. Need 'MultiReader( (reader1, key1), (reader2, key2), ... )', got %s", repr( args ) )
             raise ValueError( "Can't create MultiReader instance." )
 

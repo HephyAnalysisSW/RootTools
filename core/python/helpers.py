@@ -21,6 +21,7 @@ def partition(lst, n):
 # Translation of short types to ROOT C types
 cStringTypeDict = {
     'b': 'UChar_t',
+    'B': 'Char_t',
     'S': 'Short_t',
     's': 'UShort_t',
     'I': 'Int_t',
@@ -37,6 +38,7 @@ shortTypeDict = {v: k for k, v in cStringTypeDict.items()}
 # defaults
 defaultCTypeDict = {
     'b': '0',
+    'B': '0',
     'S': '-1',
     's': '0',
     'I': '-1',

@@ -27,7 +27,8 @@ class Plot2D( PlotBase ):
         Plot2D.defaultBinning         = binning
         Plot2D.defaultName            = name
         Plot2D.defaultSelectionString = selectionString
-        Plot2D.defaultWeight          = staticmethod(weight)
+        #Plot2D.defaultWeight          = staticmethod(weight) if not isinstance( weight, (list, tuple)) else [map(staticmethod, w2) for w2 in weight ]
+        Plot2D.defaultWeight          = weight #if not isinstance( weight, (list, tuple)) else [map(staticmethod, w2) for w2 in weight ]
         Plot2D.defaultHistoClass      = histo_class
         Plot2D.defaultTexX            = texX
         Plot2D.defaultTexY            = texY

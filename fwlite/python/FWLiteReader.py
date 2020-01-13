@@ -52,7 +52,7 @@ class FWLiteReader( LooperBase ):
 
         for name, product in products.iteritems():
             if not type(name)==type("") or not type(product)==type({}) or not 'type' in product.keys() or not 'label' in product.keys():
-                raise ValueError("Product %s:%s not in the correct form. Need 'productName':{'label':(x,y,z), 'type':type}."%(name, product) )
+                raise ValueError("Product %s:%s not in the correct form. Need 'productName':{'label':(x,y,z), 'type':type}. An entry 'skip':True causes the product not to be read."%(name, product) )
         # Inputs
         self.__products = products
         # Outputs
@@ -83,6 +83,10 @@ class FWLiteReader( LooperBase ):
         self.position = 0
         return
 
+    def readProduct( self, name):
+        self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
+        self.products[name] = self.handles[name].product()
+
     def _execute(self, readProducts = True):  
         ''' Does what a FWLite reader should do: Go to self.position and read the products.
             Returns 0 if upper eventRange is hit. 
@@ -105,9 +109,11 @@ class FWLiteReader( LooperBase ):
         # read all products
         self.products = {}
         if readProducts:
-            for name in self.__products.keys():
-                self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
-                self.products[name] = self.handles[name].product()
+            for name, product in self.__products.iteritems():
+                if not (product.has_key('skip') and product['skip'] ):
+                    self.readProduct( name ) 
+                else:
+                    self.products[name] = None
 
         # For convinience. Mimick TreeReader.event 
         self.event = __Event(self.sample, **self.products)
