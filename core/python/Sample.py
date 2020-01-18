@@ -280,6 +280,11 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         get nanoAOD from DAS and make a local copy on afs 
         if overwrite is true, old entries will be overwritten, no matter what the old entry contains. if overwrite=='update', file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
         '''
+
+        if DASname.startswith('/dpm/'): # load from DPM
+            return Sample.nanoAODfromDPM( name, DASname, redirector=redirector, dbFile=dbFile, overwrite=overwrite, treeName=treeName, maxN=maxN, selectionString=selectionString,
+                                          weightString=weightString, xSection=xSection, isData=isData, color=color, texName=texName, genWeight=genWeight, json=json )
+
         from RootTools.fwlite.Database import Database
         import json
 
