@@ -30,7 +30,7 @@ def get_logger(logLevel, logFile = None):
  
 
     # create console handler and set level to debug
-    ch = logging.StreamHandler()
+    ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.DEBUG)
 
     # add formatter to ch
