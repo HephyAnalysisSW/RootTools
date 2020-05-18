@@ -117,7 +117,7 @@ class FWLiteSample ( object ):
             dbsOut = _dasPopen(dbs).readlines()
             
             for line in dbsOut:
-                if line.startswith('/store/'):
+                if line.startswith('/store/') or line.startswith('/dpm/'):
                     line = line.rstrip()
                     filename = line
                     try:
