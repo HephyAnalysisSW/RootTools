@@ -132,8 +132,22 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def weightString(self):
         return self.__weightStrings if type(self.__weightStrings)==type("") else helpers.combineStrings(self.__weightStrings, stringOperator = "*") 
 
+    def copy_files(self, target, update = True):
+        import shutil
+        if not os.path.exists( target):
+            os.makedirs(target)
+        new_files = []
+        for i_filename, filename in enumerate(self.files):
+            target_file = os.path.join( target, os.path.basename(filename) )
+            logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file ) 
+            shutil.copy( filename, target_file )
+            new_files.append( target_file )
+
+        if update:
+            self.files = new_files
+
     @classmethod
-    def combine(cls, name, samples, texName = None, maxN = None, color = 0):
+    def combine(cls, name, samples, texName = None, maxN = None, color = -1):
         '''Make new sample from a list of samples.
            Adds normalizations if neither is None
         '''
@@ -157,7 +171,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                    files = files,
                    selectionString = check_equal_([s.selectionString for s in samples]),
                    isData = check_equal_([s.isData for s in samples]),
-                   color = color, 
+                   color = color if color>=0 else samples[0].color, 
                    texName = texName
             )
  
@@ -280,6 +294,11 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         get nanoAOD from DAS and make a local copy on afs 
         if overwrite is true, old entries will be overwritten, no matter what the old entry contains. if overwrite=='update', file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
         '''
+
+        if DASname.startswith('/dpm/'): # load from DPM
+            return Sample.nanoAODfromDPM( name, DASname, redirector=redirector, dbFile=dbFile, overwrite=overwrite, treeName=treeName, maxN=maxN, selectionString=selectionString,
+                                          weightString=weightString, xSection=xSection, isData=isData, color=color, texName=texName, genWeight=genWeight, json=json )
+
         from RootTools.fwlite.Database import Database
         import json
 
