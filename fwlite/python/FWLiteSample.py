@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 from RootTools.fwlite.Database import Database
+from RootTools.core.SampleBase import SampleBase
 
 @helpers.static_vars(sampleCounter = 0)
 def newName():
@@ -23,24 +24,20 @@ def newName():
     newName.sampleCounter += 1
     return result
 
-class FWLiteSample ( object ): 
+class FWLiteSample ( SampleBase ): 
 
-    def __init__(self, name, files = [],  color = 0, texName = None):
+    def __init__(self, name, files = [], color = 0, texName = None):
         ''' Base class constructor for all sample classes.
             'name': Name of the sample, 
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
         '''
 
-        self.name  = name
-        self.files = files
+        super(FWLiteSample, self).__init__( name=name, files=files, normalization=None, xSection=None, isData=None, color=color, texName=texName)
 
         if not len(self.files)>0:
            raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
  
-        self.color = color
-        self.texName = texName if not texName is None else name
-             
         logger.debug("Created new sample %s with %i files.", name, len(self.files))
 
     @classmethod
