@@ -480,6 +480,7 @@ def draw(plot, \
             if type(o) in [ ROOT.TF1, ROOT.TGraph, ROOT.TEfficiency ]:
                 o.Draw('same')
             else:
+                #print 2, drawObjects
                 o.Draw()
         else:
             logger.debug( "drawObjects has something I can't Draw(): %r", o)
@@ -496,12 +497,12 @@ def draw(plot, \
 
         # Make all the ratio histograms
         same=''
-        stuff=[]
+        drawn_histos=[]
         for i_num, i_den in ratio['histos']:
             num = histos[i_num][0]
             den = histos[i_den][0]
             h_ratio = helpers.clone( num )
-            stuff.append(h_ratio)
+            drawn_histos.append(h_ratio)
             # For a ratio of profiles, use projection (preserve attributes)
             if isinstance( h_ratio, ROOT.TProfile ):
                 attrs = h_ratio.__dict__
@@ -551,7 +552,7 @@ def draw(plot, \
                 graph.SetPointError(bin, 0, 0, errDown, errUp)
               h_ratio.Draw("e0"+same)
               graph.Draw("P0 same")
-              stuff.append( graph )
+              drawn_histos.append( graph )
             else:
               h_ratio.Draw(drawOption+same)
             same = 'same'
@@ -573,7 +574,7 @@ def draw(plot, \
 
         bottomPad.RedrawAxis()
     if redrawHistos:
-        for s in stuff:
+        for s in drawn_histos:
             drawOption = s.drawOption if hasattr(s, "drawOption") else "hist"
             if type(s) == ROOT.TGraphAsymmErrors: drawOption = "P0"
             if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
@@ -598,10 +599,10 @@ def draw(plot, \
     del c1
 
 def draw2D(plot, \
-        zRange = None,
         extensions = ["pdf", "png", "root"], 
         plot_directory = ".", 
         logX = False, logY = False, logZ = True, 
+        zRange = None,
         drawObjects = [],
         widths = {},
         canvasModifications = [],
@@ -657,13 +658,13 @@ def draw2D(plot, \
     histo.GetYaxis().SetTitle(plot.texY)
 
     # Range on z axis: Start with default
-    if not zRange=="auto" and not (type(zRange)==type(()) and len(zRange)==2):
-        raise ValueError( "'zRange' must bei either 'auto' or (zMin, zMax) where zMin/zMax can be 'auto'. Got: %r"%zRange )
+    if zRange is not None:
+        if not (type(zRange)==type(()) and len(zRange)==2):
+            raise ValueError( "'zRange' must be (zMin, zMax). Got: %r"%zRange )
 
-    if (type(zRange)==type(()) and len(zRange)==2) and zRange[0] != "auto":
-        histo.SetMinimum(zRange[0])
-    if (type(zRange)==type(()) and len(zRange)==2) and zRange[1] != "auto":
-        histo.SetMaximum(zRange[1])
+        if (type(zRange)==type(()) and len(zRange)==2):
+            histo.SetMinimum(zRange[0])
+            histo.SetMaximum(zRange[1])
 
     # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
     histo.GetXaxis().SetTitleFont(43)

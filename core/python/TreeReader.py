@@ -19,7 +19,7 @@ from RootTools.core.helpers import shortTypeDict
 
 class TreeReader( FlatTreeLooperBase ):
 
-    def __init__(self, sample, variables=[], sequence = [], selectionString = None, allBranchesActive = False):
+    def __init__(self, sample, variables=[], sequence = [], selectionString = None, allBranchesActive = False, ttreeFormulas = None):
 
         # The following checks are 'look before you leap' but I rather have the user know if the input is non-sensical
         if not isinstance(sample, Sample):
@@ -32,6 +32,12 @@ class TreeReader( FlatTreeLooperBase ):
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
         # Selection string to be applied to the chain
         self.selectionString = selectionString
+
+        self.ttreeFormulas = None
+        if ttreeFormulas is not None and type(ttreeFormulas)!=type({}):
+            raise ValueError( "Argument 'ttreeFormulas' is not a dictionary. Should be {'name1':'formula1', 'name2':'formula2', ...}" )
+        else: 
+            self.ttreeFormulas = ttreeFormulas
 
         # Sequence of precomputed attributes for event
         for i, s in enumerate(sequence):
@@ -239,6 +245,15 @@ class TreeReader( FlatTreeLooperBase ):
         # Check if we need to run a sequence for our sample. 
         self.__sequence = self.sequence + self.sample.sequence if hasattr(self.sample, "sequence") else self.sequence
 
+        # Book TTreeFormula objects if needed
+
+        self.__ttreeFormulas = None
+        if self.ttreeFormulas is not None:
+            self.__ttreeFormulas = {}
+            for i_name, (name, formula) in enumerate( self.ttreeFormulas.iteritems() ):
+                logger.debug( "Create  %s <- ROOT.TTreeFormula('TTF_%i', '%s', chain" % (name, i_name, formula) )
+                self.__ttreeFormulas[name] = ROOT.TTreeFormula("TTF_%i"%i_name, formula, self.sample.chain)
+
         return
 
     def _execute(self):  
@@ -266,6 +281,21 @@ class TreeReader( FlatTreeLooperBase ):
         # sequence
         for func in self.__sequence:
             func ( event = self.event, sample = self.sample ) 
+
+        # TTreeFormulas
+        if self.__ttreeFormulas is not None:
+            
+            if (not hasattr( self, "last_tchain_filename")) or self.sample.chain.GetCurrentFile().GetName() != self.last_tchain_filename:
+                to_be_updated = True
+                self.last_tchain_filename = self.sample.chain.GetCurrentFile().GetName()
+            else:
+                to_be_updated = False
+                
+            for name, formula in self.__ttreeFormulas.iteritems():
+                if to_be_updated:
+                    formula.UpdateFormulaLeaves()
+                    logger.debug( "Updating TTreeFormulas to new file in TChain: %s", self.last_tchain_filename )
+                setattr( self.event, name, formula.EvalInstance() )
 
         return 1
 
