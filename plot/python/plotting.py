@@ -232,6 +232,7 @@ def draw(plot, \
         canvasModifications = [],
         histModifications = [],
         copyIndexPHP = False,
+        redrawHistos = False,
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
@@ -344,9 +345,9 @@ def draw(plot, \
         topPad.SetTopMargin(0.07)
         topPad.SetRightMargin(0.05)
 
-    for modification in canvasModifications: modification(c1)
-
     topPad.cd()
+
+    for modification in canvasModifications: modification(c1)
 
     # Range on y axis: Start with default
     if not yRange=="auto" and not (type(yRange)==type(()) and len(yRange)==2):
@@ -440,7 +441,7 @@ def draw(plot, \
             for modification in histModifications: modification(h)
             if hasattr( plot, "histModifications") and type( plot.histModifications ) == type([]):
                 for modification in plot.histModifications:
-                    modification(histo)
+                    modification(h)
             #if drawOption=="e1": dataHist = h
             h.Draw(drawOption+same)
             same = "same"
@@ -482,9 +483,17 @@ def draw(plot, \
                 o.Draw()
         else:
             logger.debug( "drawObjects has something I can't Draw(): %r", o)
+
+    if redrawHistos:
+        for i, l in enumerate(histos):
+            drawOption = histos[i][j].drawOption if hasattr(histos[i][j], "drawOption") else "hist"
+            for j, h in enumerate(l):
+                h.Draw(drawOption+"same")
+
     # Make a ratio plot
     if ratio is not None:
         bottomPad.cd()
+
         # Make all the ratio histograms
         same=''
         stuff=[]
@@ -562,6 +571,16 @@ def draw(plot, \
             else:
                 logger.debug( "ratio['drawObjects'] has something I can't Draw(): %r", o)
 
+        bottomPad.RedrawAxis()
+    if redrawHistos:
+        for s in stuff:
+            drawOption = s.drawOption if hasattr(s, "drawOption") else "hist"
+            if type(s) == ROOT.TGraphAsymmErrors: drawOption = "P0"
+            if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
+              s.Draw("e0 same")
+            else:
+              s.Draw(drawOption+"same")
+
     if not os.path.exists(plot_directory):
         try:
             os.makedirs(plot_directory)
@@ -636,8 +655,16 @@ def draw2D(plot, \
     c1.SetLogz(logZ)
     histo.GetXaxis().SetTitle(plot.texX)
     histo.GetYaxis().SetTitle(plot.texY)
-    if zRange is not None:
-        histo.GetZaxis().SetRangeUser( *zRange )
+
+    # Range on z axis: Start with default
+    if not zRange=="auto" and not (type(zRange)==type(()) and len(zRange)==2):
+        raise ValueError( "'zRange' must bei either 'auto' or (zMin, zMax) where zMin/zMax can be 'auto'. Got: %r"%zRange )
+
+    if (type(zRange)==type(()) and len(zRange)==2) and zRange[0] != "auto":
+        histo.SetMinimum(zRange[0])
+    if (type(zRange)==type(()) and len(zRange)==2) and zRange[1] != "auto":
+        histo.SetMaximum(zRange[1])
+
     # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
     histo.GetXaxis().SetTitleFont(43)
     histo.GetYaxis().SetTitleFont(43)
