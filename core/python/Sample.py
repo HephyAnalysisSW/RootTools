@@ -411,6 +411,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
             
+        files.sort()
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
@@ -505,6 +506,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
             
+        files.sort()
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
