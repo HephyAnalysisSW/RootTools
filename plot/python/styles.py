@@ -47,3 +47,17 @@ def fillStyle( color, lineColor = ROOT.kBlack, lineWidth = 1, errors = False):
         if errors: histo.drawOption+='E'
         return 
     return func
+
+
+def hashStyle( hashCode=3644, color=ROOT.kGray+2, lineColor = ROOT.kBlack, lineWidth = 0):
+    def func( histo ):
+        lc = lineColor if lineColor is not None else color
+        histo.SetLineColor( lc )
+        histo.SetMarkerSize( 0 )
+        histo.SetMarkerStyle( 0 )
+        histo.SetFillStyle( hashCode )
+        histo.SetLineWidth( lineWidth )
+        histo.SetFillColor( color )
+        histo.drawOption = "hist"
+        return 
+    return func
