@@ -285,14 +285,15 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
-    
+
     @classmethod
     def nanoAODfromDAS(cls, name, DASname, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None, localSite='T2_AT_Vienna'):
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
         '''
         get nanoAOD from DAS and make a local copy on afs 
-        if overwrite is true, old entries will be overwritten, no matter what the old entry contains. if overwrite=='update', file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
+        overwrite = true    : old entries will be overwritten, no matter what the old entry contains. 
+        overwrite = 'update': file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
         '''
 
         if DASname.startswith('/dpm/'): # load from DPM
@@ -366,25 +367,27 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                     logger.info("Removed old DB entry.")
 
                 if instance == 'global':
-                    # check if dataset is available in local site, otherwise don't read a normalization
-                    dbs='dasgoclient -query="site %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
-                    jdata = json.load(_dasPopen(dbs))
-                    
-                    filesOnLocalT2 = False
-                    for d in jdata['data']:
-                        if d['site'][0]['name'] == localSite and d['site'][0].has_key('replica_fraction'):
-                            fraction = d['site'][0]['replica_fraction']
-                            if float(str(fraction).replace('%','')) < 100.:
-                                filesOnLocalT2 = False
-                                break
-                            else:
-                                filesOnLocalT2 = True
+                    filesOnLocalT2 = True # ignore locality check
+
+                    ## check if dataset is available in local site, otherwise don't read a normalization
+                    #dbs='dasgoclient -query="site %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                    #jdata = json.load(_dasPopen(dbs))
+                    #
+                    #filesOnLocalT2 = False
+                    #for d in jdata['data']:
+                    #    if d['site'][0]['name'] == localSite and d['site'][0].has_key('replica_fraction'):
+                    #        fraction = d['site'][0]['replica_fraction']
+                    #        if float(str(fraction).replace('%','')) < 100.:
+                    #            filesOnLocalT2 = False
+                    #            break
+                    #        else:
+                    #            filesOnLocalT2 = True
                 else:
                     # if we produced the samples ourselves we don't need to check this
                     filesOnLocalT2 = True
                 
-                if filesOnLocalT2:
-                    logger.info("Files are available at %s", localSite)
+                #if filesOnLocalT2:
+                #    logger.info("Files are available at %s", localSite)
 
                 if DASname.endswith('SIM') or not 'Run20' in DASname:
                     # need to read the proper normalization for MC
@@ -422,7 +425,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     @classmethod
     def nanoAODfromDPM(cls, name, directory, redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None, localSite='T2_AT_Vienna'):
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
         ''' 
         get nanoAOD from DPM, similar to nanoAODfromDAS but for local files, the "DAS" entry in the database is kept for compatibility
         if overwrite is true, old entries will be overwritten, no matter what the old entry contains. if overwrite=='update', file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
@@ -979,3 +982,4 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
+

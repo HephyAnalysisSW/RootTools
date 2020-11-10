@@ -11,6 +11,8 @@ import os
 import copy
 from math import log
 import uuid
+import operator
+import functools
 
 # RootTools
 import RootTools.core.TreeVariable as TreeVariable
@@ -109,8 +111,14 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
 
+            # make a list of weights
             if not hasattr(sample, "weight"):
-                sample.weight = None
+                sample.__weight = None
+            else:
+                if callable(sample.weight):
+                    sample.__weight = [sample.weight]
+                elif type(sample.weight)==type([]):
+                    sample.__weight = sample.weight
 
             # Buffer the fillers for the event loop ... could be done with a decorator but prefer to be explicit. 
             for plot in plots_for_sample:
@@ -125,7 +133,9 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
                         #Get weight
                         tmp_weight_ = plot.tmp_weight_[index[0]][index[1]]
                         weight  = 1 if tmp_weight_ is None else tmp_weight_( r.event, sample )
-                        if sample.weight is not None: weight *= sample.weight( r.event, sample )
+                        if sample.__weight is not None: 
+                            # https://www.youtube.com/watch?v=8iYdJH1i4rc&feature=youtu.be&t=79 
+                            weight *= reduce( operator.mul, map( operator.methodcaller('__call__', r.event, sample ), sample.__weight) )
                         weight*=sample_scale_factor
 
                         #Get x,y or just x which could be lists
