@@ -231,6 +231,7 @@ def draw(plot, \
         widths = {},
         canvasModifications = [],
         histModifications = [],
+        legendModifications = [],
         copyIndexPHP = False,
         redrawHistos = False,
         ):
@@ -460,9 +461,9 @@ def draw(plot, \
             for h in l:
                 if hasattr(h.sample, "notInLegend"):
                     if h.sample.notInLegend: continue
-                if hasattr(h, "texName"): 
+                if hasattr(h, "texName") and h.texName:
                     legend_text = h.texName
-                elif hasattr(h, "legendText"): 
+                elif hasattr(h, "legendText") and h.legendText:
                     legend_text = h.legendText
                 elif h.sample is not None:
                     legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
@@ -473,12 +474,17 @@ def draw(plot, \
                     legend_.AddEntry(h, legend_text, legend_option)
                 else:
                     legend_.AddEntry(h, legend_text)
+
+        for modification in legendModifications: modification(legend_)
+
         legend_.Draw()
 
     for o in drawObjects:
         if o:
-            if type(o) in [ ROOT.TF1, ROOT.TGraph, ROOT.TEfficiency ]:
+            if type(o) in [ ROOT.TF1, ROOT.TGraph ]:
                 o.Draw('same')
+            elif type(o) in [ ROOT.TEfficiency ]:
+                o.Draw('Psame')
             else:
                 o.Draw()
         else:
@@ -489,14 +495,15 @@ def draw(plot, \
             drawOption = histos[i][j].drawOption if hasattr(histos[i][j], "drawOption") else "hist"
             for j, h in enumerate(l):
                 h.Draw(drawOption+"same")
+        topPad.RedrawAxis()
 
     # Make a ratio plot
+    stuff=[]
     if ratio is not None:
         bottomPad.cd()
 
         # Make all the ratio histograms
         same=''
-        stuff=[]
         for i_num, i_den in ratio['histos']:
             num = histos[i_num][0]
             den = histos[i_den][0]
@@ -572,14 +579,15 @@ def draw(plot, \
                 logger.debug( "ratio['drawObjects'] has something I can't Draw(): %r", o)
 
         bottomPad.RedrawAxis()
-    if redrawHistos:
-        for s in stuff:
-            drawOption = s.drawOption if hasattr(s, "drawOption") else "hist"
-            if type(s) == ROOT.TGraphAsymmErrors: drawOption = "P0"
-            if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
-              s.Draw("e0 same")
-            else:
-              s.Draw(drawOption+"same")
+        if redrawHistos:
+            for s in stuff:
+                drawOption = s.drawOption if hasattr(s, "drawOption") else "hist"
+                if type(s) == ROOT.TGraphAsymmErrors: drawOption = "P0"
+                if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
+                  s.Draw("e0 same")
+                else:
+                  s.Draw(drawOption+"same")
+            bottomPad.RedrawAxis()
 
     if not os.path.exists(plot_directory):
         try:
