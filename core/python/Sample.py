@@ -141,7 +141,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             if filename.startswith('root://'):
                 import subprocess
                 logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
-                subprocess.call(['xrdcp', filename, target_file]) 
+                subprocess.call(['xrdcp', '-f', filename, target_file]) 
                 new_files.append( target_file )
             else:
                 import shutil
