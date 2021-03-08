@@ -10,6 +10,7 @@ import random
 from array import array
 from math import sqrt
 import subprocess
+import stat
 
 # Logging
 import logging
@@ -247,6 +248,70 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                     break
             if counter==0:
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
+
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
+            selectionString = selectionString, weightString = weightString,
+            isData = isData, color=color, texName = texName)
+        logger.debug("Loaded sample %s from %i files.", name, len(files))
+        return sample
+    
+    @classmethod
+    def fromSEDirectory(cls, name, directory, redirector='root://eos.grid.vbc.ac.at/', treeName = "Events", normalization = None, xSection = -1, \
+                selectionString = None, weightString = None,
+                isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
+
+        import gfal2
+
+        def gfal2_walk(topurl,topdown=True,followlinks=False,ctx=gfal2.creat_context()):
+
+            dirs = []
+            nondirs = []
+            for f in ctx.listdir(topurl)
+                url = '%s/%s' % (topurl,f)
+                fstat = ctx.stat(url)
+                if not stat.S_ISLNK(fstat.st_mode) or followlinks:
+                    if stat.S_ISDIR(fstat.st_mode):
+                        dirs.append(f)
+                    else:
+                        nondirs.append(f)
+            
+            if topdown:
+                yield topurl, dirs, nondirs
+            
+            for d in dirs:
+                yield gfal2_walk('%s/%s' % (topurl,f), topdown, followlinks, ctx)
+
+            if not topdown:
+                yield topurl, dirs, nondirs
+       
+        # Work with directories and list of directories
+        directories = [directory] if type(directory)==str else directory
+        if not all(map(lambda x: x.startswith('/eos/') or x.startswith('/store'), directories]): 
+            raise ValueError( "Directories do not start with /eos/ or /store/" )
+
+        # If no name, enumerate them.
+        if not name: name = new_name()
+
+        # Renew proxy
+        from RootTools.core.helpers import renew_proxy
+        proxy_path = os.path.expandvars('$HOME/private/.proxy')
+        if not noCheckProxy:
+            proxy = renew_proxy(proxy_path)
+        else:
+            proxy = proxy_path
+            logger.info("Not checking your proxy. Asuming you know it's still valid.")
+        logger.info( "Using proxy %s"%proxy )
+
+        files = []
+        for d in directories:
+            lenfiles = len(files)
+            for topurl, dirs, nondir in gfal2_walk(redirector + d):
+                files += [ '%s/%s' % (topurl,n) for n in nondirs if d.enswith('.root') ]
+            if lenfiles == len(files):
+                raise helpers.EmptySampleError( "No root files found in directory %s." %d )
+ 
+        if maxN is not None:
+            files = files(:maxN)
 
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
