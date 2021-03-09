@@ -133,15 +133,21 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         return self.__weightStrings if type(self.__weightStrings)==type("") else helpers.combineStrings(self.__weightStrings, stringOperator = "*") 
 
     def copy_files(self, target, update = True):
-        import shutil
         if not os.path.exists( target):
             os.makedirs(target)
         new_files = []
         for i_filename, filename in enumerate(self.files):
             target_file = os.path.join( target, os.path.basename(filename) )
-            logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file ) 
-            shutil.copy( filename, target_file )
-            new_files.append( target_file )
+            if filename.startswith('root://'):
+                import subprocess
+                logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
+                subprocess.call(['xrdcp', '-f', filename, target_file]) 
+                new_files.append( target_file )
+            else:
+                import shutil
+                logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file ) 
+                shutil.copy( filename, target_file )
+                new_files.append( target_file )
 
         if update:
             self.files = new_files
@@ -292,16 +298,12 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     @classmethod
     def nanoAODfromDAS(cls, name, DASname, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None, lazy=False):
         '''
         get nanoAOD from DAS and make a local copy on afs 
         overwrite = true    : old entries will be overwritten, no matter what the old entry contains. 
         overwrite = 'update': file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
         '''
-
-        if DASname.startswith('/dpm/'): # load from DPM
-            return Sample.nanoAODfromDPM( name, DASname, redirector=redirector, dbFile=dbFile, overwrite=overwrite, treeName=treeName, maxN=maxN, selectionString=selectionString,
-                                          weightString=weightString, xSection=xSection, isData=isData, color=color, texName=texName, genWeight=genWeight, json=json )
 
         from RootTools.fwlite.Database import Database
         import json
@@ -320,9 +322,10 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         # first check if there are already files in the cache
         normalizationFromCache = 0.
         if n_cache_files:
-            filesFromCache          = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
-            normalizationFromCache  = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
-            nEventsFromCache        = cache.getDicts({'name':name, 'DAS':DASname})[0]["nEvents"]
+            cache_dicts = cache.getDicts({'name':name, 'DAS':DASname})
+            filesFromCache          = [ f["value"] for f in cache_dicts ]
+            normalizationFromCache  = cache_dicts[0]["normalization"]
+            nEventsFromCache        = cache_dicts[0]["nEvents"]
         else:
             filesFromCache = []
 
@@ -421,100 +424,6 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
         sample.DAS      = DASname
-        sample.json     = json
-        sample.nEvents  = int(nEvents)
-        return sample
-        
-    @classmethod
-    def nanoAODfromDPM(cls, name, directory, redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
-            selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
-        ''' 
-        get nanoAOD from DPM, similar to nanoAODfromDAS but for local files, the "DAS" entry in the database is kept for compatibility
-        if overwrite is true, old entries will be overwritten, no matter what the old entry contains. if overwrite=='update', file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
-        '''
-        from RootTools.fwlite.Database import Database
-        import json
-
-        maxN  = maxN if maxN is not None and maxN>0 else None
-        limit = maxN if maxN else 0
-
-        n_cache_files = 0 
-        # Don't use the cache on partial queries
-        if dbFile is not None and ( maxN<0 or maxN is None ):
-            # the column DAS will still be called DAS (not dir or directory) otherwise we run into problems in having "fromDPM" and "fromDAS" samples in one cache file
-            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization", "nEvents"]) 
-            n_cache_files = cache.contains({'name':name, 'DAS':directory})
-        else:
-            cache = None
-
-        # first check if there are already files in the cache
-        normalizationFromCache = 0.
-        if n_cache_files:
-            filesFromCache          = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':directory}) ]
-            normalizationFromCache  = cache.getDicts({'name':name, 'DAS':directory})[0]["normalization"]
-            nEventsFromCache        = cache.getDicts({'name':name, 'DAS':directory})[0]["nEvents"]
-        else:
-            filesFromCache = []
-
-        # if we don't want to overwrite, and there's a filelist in the cache we're already done
-        if n_cache_files and not overwrite:
-            files           = filesFromCache
-            normalization   = normalizationFromCache
-            nEvents         = nEventsFromCache
-            
-            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
-
-        else:
-            # only entered if overwrite is not set or sample not in the cache yet
-
-            sampleName = directory.rstrip('/')
-            query, qwhat = sampleName, "dataset"
-
-            files = []
-            cmd = [ "xrdfs", redirector, "ls", directory ]
-            fileList = [ file for file in subprocess.check_output( cmd ).split("\n")[:-1] ]
-
-            for filename in fileList:
-                if filename.endswith(".root"):
-#                    files.append( redirector + os.path.join( directory, filename ) )
-                    files.append( os.path.join( directory, filename ) )
-                if maxN is not None and maxN>0 and len(files)>=maxN:
-                    break
-            
-            if (sorted(files) == sorted(filesFromCache)) and float(normalizationFromCache) > 0.0 and overwrite=='update':
-                # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
-                logger.info("File list for %s didn't change. Skipping.", name)
-                normalization = normalizationFromCache
-                nEvents = nEventsFromCache
-                logger.info('Sample %s from cache %s returned %i files.', name, dbFile, len(files))
-
-            else:
-                if overwrite:
-                    # remove old entry
-                    cache.removeObjects({"name":name, 'DAS':directory})
-                    logger.info("Removed old DB entry.")
-
-                # need to read the proper normalization for MC
-                logger.info("Reading normalization. This is slow, so grab a coffee.")
-                tmp_sample = cls(name=name, files=[ redirector + f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
-                    isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
-                normalization = tmp_sample.getYieldFromDraw('(1)', genWeight if directory.endswith('SIM') or not 'Run20' in directory else "1")['val']
-                logger.info("Got normalization %s", normalization)
-                nEvents = int(tmp_sample.getEventList().GetN())
-                logger.info("Got number of events %s", nEvents)
-
-                for f in files:
-                    if cache is not None:
-                        cache.add({"name":name, 'DAS':directory, 'normalization':str(normalization), 'nEvents':nEvents}, f, save=True)
-
-                logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
-
-            
-        if limit>0: files=files[:limit]
-        sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
-        sample.DAS      = directory
         sample.json     = json
         sample.nEvents  = int(nEvents)
         return sample

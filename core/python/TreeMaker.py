@@ -16,10 +16,6 @@ class TreeMaker( FlatTreeLooperBase ):
 
     def __init__(self, variables, sequence = [], treeName = "Events"):
         
-        for v in variables:
-            if not isinstance(v, TreeVariable):
-                raise ValueError( "Not a proper variable: %r"% v  )
-
         super(TreeMaker, self).__init__( variables = variables)
 
         self.makeClass( "event", variables = variables, useSTDVectors = False, addVectorCounters = True)

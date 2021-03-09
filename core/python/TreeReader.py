@@ -26,8 +26,6 @@ class TreeReader( FlatTreeLooperBase ):
             raise ValueError( "Need instance of Sample to initialize any Looper instance. Got %r."%sample )
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got %r."%variables )
-        if not all (isinstance(v, TreeVariable) for v in variables):
-            raise ValueError( "Not all elements in 'variables' are instances of Variable. Got %r."%variables )
         if selectionString is not None and not type(selectionString) == type(""):
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
         # Selection string to be applied to the chain
