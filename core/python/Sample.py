@@ -256,37 +256,49 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         return sample
     
     @classmethod
-    def fromSEDirectory(cls, name, directory, redirector='root://eos.grid.vbc.ac.at/', treeName = "Events", normalization = None, xSection = -1, \
+    def fromEOSDirectory(cls, name, directory, redirector='root://eos.grid.vbc.ac.at/', treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
 
-        import gfal2
+        from XRootD import client
+        from XRootD.client.flags import DirListFlags, StatInfoFlags
 
-        def gfal2_walk(topurl,topdown=True,followlinks=False,ctx=gfal2.creat_context()):
+        def xrd_walk(top, topdown=True, filesystem='root://eos.grid.vbc.ac.at'):
+            '''Directory tree generator for XRootD
 
-            dirs = []
-            nondirs = []
-            for f in ctx.listdir(topurl)
-                url = '%s/%s' % (topurl,f)
-                fstat = ctx.stat(url)
-                if not stat.S_ISLNK(fstat.st_mode) or followlinks:
-                    if stat.S_ISDIR(fstat.st_mode):
-                        dirs.append(f)
-                    else:
-                        nondirs.append(f)
+            For each directory in the directory tree rooted at top (including top
+            itself, but excluding '.' and '..'), yields a 4-tuple
+
+                dirpath, dirnames, filenames, fileinfos
+            '''
+
+            if type(filesystem) == str:
+                filesystem = client.FileSystem(filesystem)
             
+            s, r = filesystem.dirlist(top, DirListFlags.STAT)
+            if s.status != 0:
+                raise RuntimError(s.message)
+
+            is_dir = lambda e: bool(e.statinfo.flags & StatInfoFlags.IS_DIR)
+            info = lambda e: ( e.statinfo.size, e.statinfo.flags, e.statinfo.modtime ) 
+
+            dirnames = [ e.name for e in r.dirlist if is_dir(e) ]
+            filenames = [ e.name for e in r.dirlist if not is_dir(e) ]
+            fileinfos = [ info(e) for e in r.dirlist if not is_dir(e) ]
+
             if topdown:
-                yield topurl, dirs, nondirs
-            
-            for d in dirs:
-                yield gfal2_walk('%s/%s' % (topurl,f), topdown, followlinks, ctx)
+                yield top, dirnames, filenames, fileinfos
+
+            for d in dirnames:
+                for x in xrd_walk(os.path.join(top,d), topdown, filesystem):
+                    yield x
 
             if not topdown:
-                yield topurl, dirs, nondirs
-       
+                yield top, dirnames, filenames, fileinfos
+
         # Work with directories and list of directories
         directories = [directory] if type(directory)==str else directory
-        if not all(map(lambda x: x.startswith('/eos/') or x.startswith('/store'), directories]): 
+        if not all(map(lambda x: x.startswith('/eos/') or x.startswith('/store'), directories)): 
             raise ValueError( "Directories do not start with /eos/ or /store/" )
 
         # If no name, enumerate them.
@@ -305,13 +317,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         files = []
         for d in directories:
             lenfiles = len(files)
-            for topurl, dirs, nondir in gfal2_walk(redirector + d):
-                files += [ '%s/%s' % (topurl,n) for n in nondirs if d.enswith('.root') ]
+            for toppath, dirnames, filenames, fileinfos in xrd_walk(d,filesystem=redirector):
+                files += [ '%s/%s/%s' % (redirectors,toppath,f) for f in filenames if f.enswith('.root') ]
             if lenfiles == len(files):
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
  
         if maxN is not None:
-            files = files(:maxN)
+            files = files[:maxN]
 
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
