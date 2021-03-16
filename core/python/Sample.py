@@ -277,7 +277,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             
             s, r = filesystem.dirlist(top, DirListFlags.STAT)
             if s.status != 0:
-                raise RuntimError(s.message)
+                raise RuntimeError(s.message)
 
             is_dir = lambda e: bool(e.statinfo.flags & StatInfoFlags.IS_DIR)
             info = lambda e: ( e.statinfo.size, e.statinfo.flags, e.statinfo.modtime ) 
@@ -318,7 +318,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         for d in directories:
             lenfiles = len(files)
             for toppath, dirnames, filenames, fileinfos in xrd_walk(d,filesystem=redirector):
-                files += [ '%s/%s/%s' % (redirectors,toppath,f) for f in filenames if f.enswith('.root') ]
+                files += [ '%s/%s/%s' % (redirector,toppath,f) for f in filenames if f.endswith('.root') ]
             if lenfiles == len(files):
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
  
