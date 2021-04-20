@@ -64,23 +64,22 @@ class TreeMaker( FlatTreeLooperBase ):
 
         scalerCount = 0
         vectorCount = 0
-        addressof = ROOT.addressof if  ROOT.gROOT.GetVersion()>="6.22" else ROOT.AddressOf
         for s in self.variables:
             if isinstance(s, ScalarTreeVariable):
                 self.branches.append( 
-                    self.tree.Branch(s.name, addressof( self.event, s.name), '%s/%s'%(s.name, s.type))
+                    self.tree.Branch(s.name, ROOT.AddressOf( self.event, s.name), '%s/%s'%(s.name, s.type))
                 )
                 scalerCount+=1
             elif isinstance(s, VectorTreeVariable):
                 # first add counter counter
                 counter = s.counterVariable()
                 self.branches.append( 
-                    self.tree.Branch(counter.name, addressof( self.event, counter.name ), '%s/%s'%(counter.name, counter.type))
+                    self.tree.Branch(counter.name, ROOT.AddressOf( self.event, counter.name ), '%s/%s'%(counter.name, counter.type))
                 )
                 # then add vector components
                 for comp in s.components:
                     self.branches.append(
-                        self.tree.Branch(comp.name, addressof( self.event, comp.name ), "%s[%s]/%s"%(comp.name, counter.name, comp.type) )
+                        self.tree.Branch(comp.name, ROOT.AddressOf( self.event, comp.name ), "%s[%s]/%s"%(comp.name, counter.name, comp.type) )
                     )
                 vectorCount+=1
             else:
