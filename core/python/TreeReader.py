@@ -79,12 +79,15 @@ class TreeReader( FlatTreeLooperBase ):
         ''' Set all the branch addresses to the members in the class instance
         '''
         #for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
+
+        addressof = ROOT.addressof if  ROOT.gROOT.GetVersion()>="6.22" else ROOT.AddressOf
+
         for s in self.variables:
             if isinstance(s, ScalarTreeVariable ):
-                self.sample.chain.SetBranchAddress(s.name, ROOT.AddressOf(self.event, s.name ))
+                self.sample.chain.SetBranchAddress(s.name, addressof(self.event, s.name ))
             elif isinstance(s, VectorTreeVariable ):
                 for comp in s.components:
-                    self.sample.chain.SetBranchAddress(comp.name, ROOT.AddressOf(self.event, comp.name ))
+                    self.sample.chain.SetBranchAddress(comp.name, addressof(self.event, comp.name ))
             else:
                 raise ValueError( "Don't know what variable %r is." % s )
  
