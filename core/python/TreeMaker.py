@@ -16,10 +16,6 @@ class TreeMaker( FlatTreeLooperBase ):
 
     def __init__(self, variables, sequence = [], treeName = "Events"):
         
-        for v in variables:
-            if not isinstance(v, TreeVariable):
-                raise ValueError( "Not a proper variable: %r"% v  )
-
         super(TreeMaker, self).__init__( variables = variables)
 
         self.makeClass( "event", variables = variables, useSTDVectors = False, addVectorCounters = True)
@@ -66,24 +62,31 @@ class TreeMaker( FlatTreeLooperBase ):
 
     def makeBranches(self):
 
+        def addressof( event, s ):
+            if ROOT.gROOT.GetVersion()>='6.22':
+                from cppyy.ll import cast
+                return cast['void*'](ROOT.addressof(event, s )) 
+            else:
+                return ROOT.AddressOf(event, s )
+
         scalerCount = 0
         vectorCount = 0
         for s in self.variables:
             if isinstance(s, ScalarTreeVariable):
                 self.branches.append( 
-                    self.tree.Branch(s.name, ROOT.AddressOf( self.event, s.name), '%s/%s'%(s.name, s.type))
+                    self.tree.Branch(s.name, addressof( self.event, s.name), '%s/%s'%(s.name, s.type))
                 )
                 scalerCount+=1
             elif isinstance(s, VectorTreeVariable):
                 # first add counter counter
                 counter = s.counterVariable()
                 self.branches.append( 
-                    self.tree.Branch(counter.name, ROOT.AddressOf( self.event, counter.name ), '%s/%s'%(counter.name, counter.type))
+                    self.tree.Branch(counter.name, addressof( self.event, counter.name ), '%s/%s'%(counter.name, counter.type))
                 )
                 # then add vector components
                 for comp in s.components:
                     self.branches.append(
-                        self.tree.Branch(comp.name, ROOT.AddressOf( self.event, comp.name ), "%s[%s]/%s"%(comp.name, counter.name, comp.type) )
+                        self.tree.Branch(comp.name, addressof( self.event, comp.name ), "%s[%s]/%s"%(comp.name, counter.name, comp.type) )
                     )
                 vectorCount+=1
             else:

@@ -11,6 +11,8 @@ import os
 import copy
 from math import log
 import uuid
+import operator
+import functools
 
 # RootTools
 import RootTools.core.TreeVariable as TreeVariable
@@ -109,8 +111,14 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
 
+            # make a list of weights
             if not hasattr(sample, "weight"):
-                sample.weight = None
+                sample.__weight = None
+            else:
+                if callable(sample.weight):
+                    sample.__weight = [sample.weight]
+                elif type(sample.weight)==type([]):
+                    sample.__weight = sample.weight
 
             # Buffer the fillers for the event loop ... could be done with a decorator but prefer to be explicit. 
             for plot in plots_for_sample:
@@ -125,7 +133,9 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
                         #Get weight
                         tmp_weight_ = plot.tmp_weight_[index[0]][index[1]]
                         weight  = 1 if tmp_weight_ is None else tmp_weight_( r.event, sample )
-                        if sample.weight is not None: weight *= sample.weight( r.event, sample )
+                        if sample.__weight is not None: 
+                            # https://www.youtube.com/watch?v=8iYdJH1i4rc&feature=youtu.be&t=79 
+                            weight *= reduce( operator.mul, map( operator.methodcaller('__call__', r.event, sample ), sample.__weight) )
                         weight*=sample_scale_factor
 
                         #Get x,y or just x which could be lists
@@ -231,7 +241,9 @@ def draw(plot, \
         widths = {},
         canvasModifications = [],
         histModifications = [],
+        legendModifications = [],
         copyIndexPHP = False,
+        redrawHistos = False,
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
@@ -344,9 +356,9 @@ def draw(plot, \
         topPad.SetTopMargin(0.07)
         topPad.SetRightMargin(0.05)
 
-    for modification in canvasModifications: modification(c1)
-
     topPad.cd()
+
+    for modification in canvasModifications: modification(c1)
 
     # Range on y axis: Start with default
     if not yRange=="auto" and not (type(yRange)==type(()) and len(yRange)==2):
@@ -438,6 +450,9 @@ def draw(plot, \
                 h.GetYaxis().SetTitleOffset( 1.6 )
 
             for modification in histModifications: modification(h)
+            if hasattr( plot, "histModifications") and type( plot.histModifications ) == type([]):
+                for modification in plot.histModifications:
+                    modification(h)
             #if drawOption=="e1": dataHist = h
             h.Draw(drawOption+same)
             same = "same"
@@ -456,9 +471,9 @@ def draw(plot, \
             for h in l:
                 if hasattr(h.sample, "notInLegend"):
                     if h.sample.notInLegend: continue
-                if hasattr(h, "texName"): 
+                if hasattr(h, "texName") and h.texName:
                     legend_text = h.texName
-                elif hasattr(h, "legendText"): 
+                elif hasattr(h, "legendText") and h.legendText:
                     legend_text = h.legendText
                 elif h.sample is not None:
                     legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
@@ -469,27 +484,42 @@ def draw(plot, \
                     legend_.AddEntry(h, legend_text, legend_option)
                 else:
                     legend_.AddEntry(h, legend_text)
+
+        for modification in legendModifications: modification(legend_)
+
         legend_.Draw()
 
     for o in drawObjects:
         if o:
-            if type(o) in [ ROOT.TF1, ROOT.TGraph, ROOT.TEfficiency ]:
+            if type(o) in [ ROOT.TF1, ROOT.TGraph ]:
                 o.Draw('same')
+            elif type(o) in [ ROOT.TEfficiency ]:
+                o.Draw('Psame')
             else:
+                #print 2, drawObjects
                 o.Draw()
         else:
             logger.debug( "drawObjects has something I can't Draw(): %r", o)
+
+    if redrawHistos:
+        for i, l in enumerate(histos):
+            drawOption = histos[i][j].drawOption if hasattr(histos[i][j], "drawOption") else "hist"
+            for j, h in enumerate(l):
+                h.Draw(drawOption+"same")
+        topPad.RedrawAxis()
+
     # Make a ratio plot
+    drawn_histos=[]
     if ratio is not None:
         bottomPad.cd()
+
         # Make all the ratio histograms
         same=''
-        stuff=[]
         for i_num, i_den in ratio['histos']:
             num = histos[i_num][0]
             den = histos[i_den][0]
             h_ratio = helpers.clone( num )
-            stuff.append(h_ratio)
+            drawn_histos.append(h_ratio)
             # For a ratio of profiles, use projection (preserve attributes)
             if isinstance( h_ratio, ROOT.TProfile ):
                 attrs = h_ratio.__dict__
@@ -539,7 +569,7 @@ def draw(plot, \
                 graph.SetPointError(bin, 0, 0, errDown, errUp)
               h_ratio.Draw("e0"+same)
               graph.Draw("P0 same")
-              stuff.append( graph )
+              drawn_histos.append( graph )
             else:
               h_ratio.Draw(drawOption+same)
             same = 'same'
@@ -559,6 +589,17 @@ def draw(plot, \
             else:
                 logger.debug( "ratio['drawObjects'] has something I can't Draw(): %r", o)
 
+        bottomPad.RedrawAxis()
+        if redrawHistos:
+            for s in drawn_histos:
+                drawOption = s.drawOption if hasattr(s, "drawOption") else "hist"
+                if type(s) == ROOT.TGraphAsymmErrors: drawOption = "P0"
+                if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
+                  s.Draw("e0 same")
+                else:
+                  s.Draw(drawOption+"same")
+            bottomPad.RedrawAxis()
+
     if not os.path.exists(plot_directory):
         try:
             os.makedirs(plot_directory)
@@ -576,10 +617,10 @@ def draw(plot, \
     del c1
 
 def draw2D(plot, \
-        zRange = None,
         extensions = ["pdf", "png", "root"], 
         plot_directory = ".", 
         logX = False, logY = False, logZ = True, 
+        zRange = None,
         drawObjects = [],
         widths = {},
         canvasModifications = [],
@@ -662,7 +703,10 @@ def draw2D(plot, \
     ROOT.gPad.SetRightMargin(0.15)
 
     for modification in histModifications: modification(histo)
-
+    if hasattr( plot, "histModifications") and type( plot.histModifications ) == type([]):
+        for modification in plot.histModifications:
+            modification(histo)
+        
     histo.Draw(drawOption)
 
     c1.RedrawAxis()

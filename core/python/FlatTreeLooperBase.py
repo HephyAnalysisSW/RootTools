@@ -25,10 +25,8 @@ class FlatTreeLooperBase( LooperBase ):
 
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got %r"%variables )
-        if not all (isinstance(v, TreeVariable) for v in variables):
-            raise ValueError( "Not all elements in variable list are instances of TreeVariable. Got %r"%variables )
 
-        self.variables = variables
+        self.variables = map( lambda v: v if isinstance(v, TreeVariable) else TreeVariable.fromString(v), variables )
 
         # Keep track of uuids in order to clean up
         self.classUUIDs = []
