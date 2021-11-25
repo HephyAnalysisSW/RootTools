@@ -26,14 +26,14 @@ def newName():
 
 class FWLiteSample ( SampleBase ): 
 
-    def __init__(self, name, files = [], color = 0, texName = None):
+    def __init__(self, name, files = [], color = 0, texName = None, xSection = None):
         ''' Base class constructor for all sample classes.
             'name': Name of the sample, 
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
         '''
 
-        super(FWLiteSample, self).__init__( name=name, files=files, normalization=None, xSection=None, isData=None, color=color, texName=texName)
+        super(FWLiteSample, self).__init__( name=name, files=files, normalization=None, xSection=xSection, isData=None, color=color, texName=texName)
 
         if not len(self.files)>0:
            raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
@@ -134,7 +134,7 @@ class FWLiteSample ( SampleBase ):
 
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False, xSection = None):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
@@ -201,7 +201,7 @@ class FWLiteSample ( SampleBase ):
 
         if limit>0: files=files[:limit]
 
-        result = cls(name, files=[prefix+file for file in files], texName = texName)
+        result = cls(name, files=[prefix+file for file in files], texName = texName, xSection = xSection)
         result.DASname = DASname
         return result
 

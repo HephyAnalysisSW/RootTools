@@ -34,7 +34,7 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
+def fill(plots, read_variables = [], sequence=[], ttreeFormulas = {}, max_events = -1 ):
     '''Create histos and fill all plots
     '''
 
@@ -106,7 +106,7 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
                     else: 
                         read_variables_sample.append( v )
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables_ + read_variables_plot + read_variables_sample, sequence = sequence, selectionString = selectionString )
+            r = sample.treeReader( variables = read_variables_ + read_variables_plot + read_variables_sample, sequence = sequence, selectionString = selectionString, ttreeFormulas = ttreeFormulas)
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
@@ -133,10 +133,15 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
                         #Get weight
                         tmp_weight_ = plot.tmp_weight_[index[0]][index[1]]
                         weight  = 1 if tmp_weight_ is None else tmp_weight_( r.event, sample )
+
+                        #if plot.name.startswith('V_pt'):
+                        #    print "A", plot.name, index[0], index[1], tmp_weight_, weight
                         if sample.__weight is not None: 
                             # https://www.youtube.com/watch?v=8iYdJH1i4rc&feature=youtu.be&t=79 
                             weight *= reduce( operator.mul, map( operator.methodcaller('__call__', r.event, sample ), sample.__weight) )
                         weight*=sample_scale_factor
+                        #if plot.name.startswith('V_pt'):
+                        #    print "B", plot.name, index[0], index[1], tmp_weight_, weight
 
                         #Get x,y or just x which could be lists
                         TH_fill_args = [ filler( r.event, sample ) for filler in plot.store_fillers ]
@@ -431,6 +436,7 @@ def draw(plot, \
             drawOption = histos[i][j].drawOption if hasattr(histos[i][j], "drawOption") else "hist"
             topPad.SetLogy(logY)
             topPad.SetLogx(logX)
+            #print yMin_, yMax_
             h.GetYaxis().SetRangeUser(yMin_, yMax_)
             h.GetXaxis().SetTitle(plot.texX)
             h.GetYaxis().SetTitle(plot.texY)
