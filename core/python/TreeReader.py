@@ -79,14 +79,25 @@ class TreeReader( FlatTreeLooperBase ):
         ''' Set all the branch addresses to the members in the class instance
         '''
         #for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
-        for s in self.variables:
-            if isinstance(s, ScalarTreeVariable ):
-                self.sample.chain.SetBranchAddress(s.name, ROOT.AddressOf(self.event, s.name ))
-            elif isinstance(s, VectorTreeVariable ):
-                for comp in s.components:
-                    self.sample.chain.SetBranchAddress(comp.name, ROOT.AddressOf(self.event, comp.name ))
-            else:
-                raise ValueError( "Don't know what variable %r is." % s )
+        if ROOT.gROOT.GetVersion()>='6.22':
+            from cppyy.ll import cast
+            for s in self.variables:
+                if isinstance(s, ScalarTreeVariable ):
+                    self.sample.chain.SetBranchAddress(s.name, cast['void*'](ROOT.addressof(self.event, s.name )) )
+                elif isinstance(s, VectorTreeVariable ):
+                    for comp in s.components:
+                        self.sample.chain.SetBranchAddress(comp.name, cast['void*'](ROOT.addressof(self.event, comp.name )))
+                else:
+                    raise ValueError( "Don't know what variable %r is." % s )
+        else:
+            for s in self.variables:
+                if isinstance(s, ScalarTreeVariable ):
+                    self.sample.chain.SetBranchAddress(s.name, ROOT.AddressOf(self.event, s.name ))
+                elif isinstance(s, VectorTreeVariable ):
+                    for comp in s.components:
+                        self.sample.chain.SetBranchAddress(comp.name, ROOT.AddressOf(self.event, comp.name ))
+                else:
+                    raise ValueError( "Don't know what variable %r is." % s )
  
     def cloneTree(self, branchList = [], newTreename = None, rootfile = None):
         '''Clone tree after preselection and event range

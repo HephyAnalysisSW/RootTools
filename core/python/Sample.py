@@ -45,7 +45,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             weightString = None,
             isData = False, 
             color = 0, 
-            texName = None):
+            texName = None, 
+            skipCheck = False):
         ''' Handling of sample. Uses a TChain to handle root files with flat trees.
             'name': Name of the sample, 
             'treeName': name of the TTree in the input files
@@ -57,6 +58,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
+            'skipCheck': Check files when making chain? 
         '''
         
         super(Sample, self).__init__( name=name, files=files, normalization=normalization, xSection=xSection, isData=isData, color=color, texName=texName)
@@ -69,6 +71,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
         self.__weightStrings = [] 
         self.setWeightString( weightString )
+
+        self.skipCheck = skipCheck
 
         # Other samples. Add friend elements (friend, treeName)
         self.friends = []
@@ -255,18 +259,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, xSection = -1, \
+    def fromDirectory(cls, name, directory, redirector = None, treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
-                isData = False, color = 0, texName = None, maxN = None):
+                isData = False, color = 0, texName = None, maxN = None, skipCheck = False):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
         directories = [directory] if type(directory)==type("") else directory 
-
-        # Automatically read from dpm if the directories indicate so
-        if all( d.startswith('/dpm/') for d in directories ):
-            return Sample.fromDPMDirectory( name=name, directory=directory, treeName=treeName, normalization=normalization, xSection=xSection,
-                                            selectionString=selectionString, weightString=weightString, isData=isData, color=color, texName=texName, maxN=maxN) 
 
         # If no name, enumerate them.
         if not name: name = new_name()
@@ -274,10 +273,18 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         # find all files
         files = [] 
         for d in directories:
-            fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
+            if redirector is None:
+                fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
+                logger.debug("Found %i files in directory %s", len(fileNames), d) 
+            else:
+                cmd = "xrdfs %s ls %s" %(redirector, d)
+                p = subprocess.Popen( [cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+                fileNames = [ redirector+'/'+f.rstrip("\n") for f in p.stdout.readlines() if f.endswith('.root\n') ]
+                logger.debug("Found %i files in directory (xrootd) %s", len(fileNames), d) 
             if len(fileNames) == 0:
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
             files.extend( fileNames )
+                 
         if not treeName: 
             treeName = "Events"
             logger.debug("Argument 'treeName' not provided, using 'Events'.") 
@@ -288,7 +295,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName)
+            isData = isData, color=color, texName = texName, skipCheck = skipCheck)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
@@ -639,7 +646,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             for f in self.files:
                 logger.debug("Now adding file %s to sample '%s'", f, self.name)
                 try:
-                    if helpers.checkRootFile(f, checkForObjects=[self.treeName]):
+                    if self.skipCheck or helpers.checkRootFile(f, checkForObjects=[self.treeName]):
                         self._chain.Add(f)
                         counter+=1
                     else:
