@@ -479,6 +479,8 @@ def draw(plot, \
                     if h.sample.notInLegend: continue
                 if hasattr(h, "texName") and h.texName:
                     legend_text = h.texName
+                elif hasattr(h, "texName") and not h.texName:
+                    continue
                 elif hasattr(h, "legendText") and h.legendText:
                     legend_text = h.legendText
                 elif h.sample is not None:
