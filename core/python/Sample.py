@@ -7,6 +7,7 @@ import ROOT
 import uuid
 import os
 import random
+import time
 from array import array
 from math import sqrt
 import subprocess
@@ -273,9 +274,24 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         # find all files
         files = [] 
         for d in directories:
+	    print "directoryL ", d
+	    rand = random.randint(5,100)
+	    print "sleep for: ", rand
+	    time.sleep(rand)
             if redirector is None:
-                fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
+		fileNames = []
+	        ##fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
+	    	for dirs, subdirs, rootfile in os.walk(d):
+			
+			for f in rootfile:
+				if f.endswith('root'):
+					#print "files: ", f, "directory: ", dirs
+					#print "path for root files: ", os.path.join(dirs,f)
+					fileNames += [os.path.join(dirs,f)]
+			#fileNames += [ os.path.join(dirs,f) for f in rootfile if f.endswith('.root')]
+		#print "Found %i files in directory %s", len(fileNames), d
                 logger.debug("Found %i files in directory %s", len(fileNames), d) 
+
             else:
                 cmd = "xrdfs %s ls %s" %(redirector, d)
                 p = subprocess.Popen( [cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
@@ -284,6 +300,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             if len(fileNames) == 0:
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
             files.extend( fileNames )
+	    #print "confirm length of list added: ", len(files)
                  
         if not treeName: 
             treeName = "Events"
@@ -297,6 +314,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, skipCheck = skipCheck)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
+	#genWeight = 'genWeight'
+	#normalization = sample.getYieldFromDraw(selectionString='(1)',weightString=genWeight)['val']
+	#print "normalization of sample: ", sample.name , normalization
         return sample
 
     @classmethod
