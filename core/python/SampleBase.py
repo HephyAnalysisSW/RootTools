@@ -43,7 +43,7 @@ class SampleBase( object, metaclass=abc.ABCMeta ):
             return
 
         # Keeping track of reduceFile factors
-        factor = len(self.files)//float(len_before)
+        factor = len(self.files)/float(len_before)
         if hasattr(self, "reduce_files_factor"):
             self.reduce_files_factor *= factor
         else:

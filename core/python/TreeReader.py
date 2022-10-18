@@ -86,7 +86,11 @@ class TreeReader( FlatTreeLooperBase ):
                     self.sample.chain.SetBranchAddress(s.name, cast['void*'](ROOT.addressof(self.event, s.name )) )
                 elif isinstance(s, VectorTreeVariable ):
                     for comp in s.components:
-                        self.sample.chain.SetBranchAddress(comp.name, cast['void*'](ROOT.addressof(self.event, comp.name )))
+                        try:
+                            self.sample.chain.SetBranchAddress(comp.name, cast['void*'](ROOT.addressof(self.event, comp.name )))
+                        except TypeError as e:
+                            print("Problem with: %s"%comp.name)
+                            raise e
                 else:
                     raise ValueError( "Don't know what variable %r is." % s )
         else:
