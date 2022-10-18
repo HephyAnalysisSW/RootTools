@@ -317,7 +317,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
         n_cache_files = 0 
         # Don't use the cache on partial queries
-        if dbFile is not None and ( maxN<0 or maxN is None ):
+        if dbFile is not None and ( maxN is None or maxN<0 ):
             cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization", "nEvents"]) 
             n_cache_files = cache.contains({'name':name, 'DAS':DASname})
         else:
