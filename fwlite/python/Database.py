@@ -53,8 +53,8 @@ class Database:
         '''
         Get all entries in the database matching the provided key.
         '''
-        columns = key.keys()+["value", "time_stamp"]
-        selection = " AND ".join([ "%s = '%s'"%(k, key[k]) for k in key.keys() ])
+        columns = list(key.keys())+["value", "time_stamp"]
+        selection = " AND ".join([ "%s = '%s'"%(k, key[k]) for k in list(key.keys()) ])
 
         selectionString = "SELECT * FROM {} ".format(self.tableName) + " WHERE {} ".format(selection) + " ORDER BY time_stamp"
         self.connect()
@@ -102,12 +102,12 @@ class Database:
         if os.environ['HOSTNAME'].startswith('worker'):
             raise RuntimeError( "I'm running on the hephy batch. I shall not fill the db file from here." ) 
 
-        columns = key.keys()+["value", "time_stamp"]
-        values  = key.values()+[str(value), time.time()]
+        columns = list(key.keys())+["value", "time_stamp"]
+        values  = list(key.values())+[str(value), time.time()]
         
         # check if number of columns matches. By default, there is no error if not, but better be save than sorry.
-        if len(key.keys())+1 < len(self.columns):
-            raise(ValueError("The length of the given key doesn't match the number of columns in the table. The following columns (excluding value and time_stamp) are part of the table: %s"%", ".join(self.columns)))
+        if len(list(key.keys()))+1 < len(self.columns):
+            raise ValueError
 
         selectionString = "INSERT INTO {} ".format(self.tableName) + " ({}) ".format(", ".join( columns )) + " VALUES ({})".format(", ".join([ "'%s'"%i for i in values ]))
         self.connect()
@@ -138,7 +138,7 @@ class Database:
         '''
         Remove entries matching the key. Careful when not all columns are specified!
         '''
-        selection = " AND ".join([ "%s = '%s'"%(k, key[k]) for k in key.keys() ])
+        selection = " AND ".join([ "%s = '%s'"%(k, key[k]) for k in list(key.keys()) ])
 
         selectionString = "DELETE FROM {} ".format(self.tableName) + " WHERE {} ".format(selection)
         self.connect()

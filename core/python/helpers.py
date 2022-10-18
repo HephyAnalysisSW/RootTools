@@ -16,7 +16,7 @@ def partition(lst, n):
     ''' Partition list into chunks of approximately equal size'''
     # http://stackoverflow.com/questions/2659900/python-slicing-a-list-into-n-nearly-equal-length-partitions
     n_division = len(lst) / float(n)
-    return [ lst[int(round(n_division * i)): int(round(n_division * (i + 1)))] for i in xrange(n) ]
+    return [ lst[int(round(n_division * i)): int(round(n_division * (i + 1)))] for i in range(n) ]
 
 # Translation of short types to ROOT C types
 cStringTypeDict = {
@@ -33,7 +33,7 @@ cStringTypeDict = {
     'O': 'Bool_t',
 }
 # reversed
-shortTypeDict = {v: k for k, v in cStringTypeDict.items()}
+shortTypeDict = {v: k for k, v in list(cStringTypeDict.items())}
 
 # defaults
 defaultCTypeDict = {
@@ -104,7 +104,7 @@ def fromString(*args):
     args = sum( [ [s] if type(s)==type("") else s for s in args if s is not None], [])
     if not all(type(s)==type("") or isinstance(s, TreeVariable) for s in args):
         raise ValueError( "Need string or TreeVariable instance or list of these as argument, got %r"%args)
-    return tuple(map(lambda s:TreeVariable.fromString(s) if type(s)==type("") else s, args))
+    return tuple([TreeVariable.fromString(s) if type(s)==type("") else s for s in args])
 
 def clone(root_object, new_name = None):
     ''' Cloning a ROOT class instance and preserving attributes

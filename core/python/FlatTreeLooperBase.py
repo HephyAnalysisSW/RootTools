@@ -18,15 +18,13 @@ from RootTools.core.LooperBase import LooperBase
 from RootTools.core.LooperHelpers import createClassString
 from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 
-class FlatTreeLooperBase( LooperBase ):
-    __metaclass__ = abc.ABCMeta
-
+class FlatTreeLooperBase( LooperBase, metaclass=abc.ABCMeta ):
     def __init__(self, variables):
 
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got %r"%variables )
 
-        self.variables = map( lambda v: v if isinstance(v, TreeVariable) else TreeVariable.fromString(v), variables )
+        self.variables = [v if isinstance(v, TreeVariable) else TreeVariable.fromString(v) for v in variables]
 
         # Keep track of uuids in order to clean up
         self.classUUIDs = []
@@ -51,7 +49,7 @@ class FlatTreeLooperBase( LooperBase ):
         tmpFileName = os.path.join(self.tmpDir, classUUID+'.C')
         className = "Class_"+classUUID
 
-        with file( tmpFileName, 'w' ) as f:
+        with open( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
             f.write(
                 createClassString( variables = variables, useSTDVectors = useSTDVectors, addVectorCounters = addVectorCounters)

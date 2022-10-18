@@ -46,7 +46,7 @@ r.start()
 runs = set()
 while r.run():
     runs.add(r.evt[0])
-    print r.event.evt, r.event.lumi, r.event.run, "Number of pfJets", r.event.pfJets.size()
+    print(r.event.evt, r.event.lumi, r.event.run, "Number of pfJets", r.event.pfJets.size())
 
 logger.info( "Found the following run(s): %s", ",".join(str(run) for run in runs) )
 

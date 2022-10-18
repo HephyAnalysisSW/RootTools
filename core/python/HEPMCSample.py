@@ -150,7 +150,7 @@ class HEPMCSample ( SampleBase ): # 'object' argument will disappear in Python 3
                     normalization   = self.normalization, 
                     isData          = self.isData, 
                     color           = self.color, 
-                    texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+                    texName         = self.texName ) for n_sample in range(len(chunks)) ]
         else:
             return HEPMCSample(
                     name            = self.name,

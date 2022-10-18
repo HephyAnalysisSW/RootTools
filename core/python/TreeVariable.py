@@ -11,9 +11,7 @@ import RootTools.core.helpers as helpers
 allTypes  = set(helpers.cStringTypeDict.keys())
 allCTypes = set(helpers.cStringTypeDict.values())
 
-class TreeVariable( object ):
-    __metaclass__ = abc.ABCMeta
-   
+class TreeVariable( object, metaclass=abc.ABCMeta ):
     @abc.abstractmethod
     def __init__(self):
         return 

@@ -27,8 +27,8 @@ class Immutable(object):
     def __iter__(self):
         return object.__getattribute__(self, '_wrapped').__iter__()
 
-    def next(self):
-        return object.__getattribute__(self, '_wrapped').next()
+    def __next__(self):
+        return next(object.__getattribute__(self, '_wrapped'))
 
     def __getitem__(self, item):
         return object.__getattribute__(self, '_wrapped').__getitem__(item)

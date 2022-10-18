@@ -60,7 +60,7 @@ class MultiReader( LooperBase ):
                 intersec = set(reader_positions[i_reader].keys()).intersection(intersec)
                 logger.info( "Intersecting with reader %i ( %i different positions) gives %i common positions (before: %i).", i_reader, len_i, len( intersec ), before )
 
-        x_readers       = range( len( self.readers ) )
+        x_readers       = list(range( len( self.readers )))
         self.reader_positions  = [tuple(reader_positions[i_reader][i] for i_reader in x_readers ) for i in intersec ]
 
         # FIXME: Sorting is important for performance. The key should be chosen such that if it's sorted 

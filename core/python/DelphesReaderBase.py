@@ -17,9 +17,7 @@ from RootTools.core.Sample     import Sample
 import logging
 logger = logging.getLogger(__name__)
 
-class DelphesReaderBase( LooperBase ):
-    __metaclass__ = abc.ABCMeta
-
+class DelphesReaderBase( LooperBase, metaclass=abc.ABCMeta ):
     def __init__( self, sample,  selectionString = None, sequence = []):
         ''' Return an instance of a MakeClass object
         '''
@@ -82,9 +80,9 @@ class DelphesReaderBase( LooperBase ):
         '''For convinience: Define splitting of sample according to various criteria
         '''
         if maxFileSizeMB is not None:
-            nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
+            nSplit = sum( os.path.getsize(f) for f in self.sample.files ) // ( 1024**2*maxFileSizeMB )
         elif maxNEvents is not None:
-            nSplit = self.nEvents / maxNEvents 
+            nSplit = self.nEvents // maxNEvents 
         elif nJobs is not None:
             nSplit = nJobs
         else:
@@ -94,7 +92,7 @@ class DelphesReaderBase( LooperBase ):
         if nSplit==0:
             logger.debug( "Returning full event range because no splitting is specified" )
             return [(0, self.nEvents)]
-        thresholds = [i*self.nEvents/nSplit for i in range(nSplit)]+[self.nEvents]
+        thresholds = [i*self.nEvents//nSplit for i in range(nSplit)]+[self.nEvents]
         return [(thresholds[i], thresholds[i+1]) for i in range(len(thresholds)-1)]
 
     def setEventRange( self, evtRange ):

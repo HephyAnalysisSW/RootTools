@@ -50,8 +50,8 @@ class FWLiteReader( LooperBase ):
         if not type(products) == type({}):
             raise ValueError( "Argument 'products' must be dictionary: { ..., 'productName':{'label':(x,y,z), 'type':type}, ...}. Got %r."%products )
 
-        for name, product in products.iteritems():
-            if not type(name)==type("") or not type(product)==type({}) or not 'type' in product.keys() or not 'label' in product.keys():
+        for name, product in products.items():
+            if not type(name)==type("") or not type(product)==type({}) or not 'type' in list(product.keys()) or not 'label' in list(product.keys()):
                 raise ValueError("Product %s:%s not in the correct form. Need 'productName':{'label':(x,y,z), 'type':type}. An entry 'skip':True causes the product not to be read."%(name, product) )
         # Inputs
         self.__products = products
@@ -59,7 +59,7 @@ class FWLiteReader( LooperBase ):
         self.products = None
 
         # Create Handles for __products
-        self.handles={v:Handle(self.__products[v]['type']) for v in self.__products.keys()}
+        self.handles={v:Handle(self.__products[v]['type']) for v in list(self.__products.keys())}
 
         # Initialize looper
         super(FWLiteReader, self).__init__( ) 
@@ -109,8 +109,8 @@ class FWLiteReader( LooperBase ):
         # read all products
         self.products = {}
         if readProducts:
-            for name, product in self.__products.iteritems():
-                if not (product.has_key('skip') and product['skip'] ):
+            for name, product in self.__products.items():
+                if not ('skip' in product and product['skip'] ):
                     self.readProduct( name ) 
                 else:
                     self.products[name] = None

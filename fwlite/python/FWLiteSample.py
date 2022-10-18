@@ -105,7 +105,7 @@ class FWLiteSample ( SampleBase ):
 
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
-                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                    raise RuntimeError("Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs)
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
@@ -175,7 +175,7 @@ class FWLiteSample ( SampleBase ):
 
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
-                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                    raise RuntimeError("Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs)
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
@@ -237,7 +237,7 @@ class FWLiteSample ( SampleBase ):
                 name            = self.name+"_%i" % n_sample, 
                 files           = chunks[n_sample], 
                 color           = self.color, 
-                texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+                texName         = self.texName ) for n_sample in range(len(chunks)) ]
 
         if nSub == None:
             return splitSamps
@@ -250,6 +250,6 @@ class FWLiteSample ( SampleBase ):
     def fwliteReader(self, **kwargs):
         ''' Return a FWLiteReader class for the sample
         '''
-        from FWLiteReader import FWLiteReader
+        from .FWLiteReader import FWLiteReader
         logger.debug("Creating FWLiteReader object for sample '%s'.", self.name)
         return FWLiteReader( self, **kwargs )

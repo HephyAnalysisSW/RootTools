@@ -345,7 +345,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             # only entered if overwrite is not set or sample not in the cache yet
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
-                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                    raise RuntimeError("Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs)
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
@@ -612,7 +612,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             weightString    = self.weightString,
             isData          = self.isData,
             color           = self.color,
-            texName         = self.texName) for n_sample in xrange(len(chunks))]
+            texName         = self.texName) for n_sample in range(len(chunks))]
 
         if hasattr(self, 'json'):
             for s in splitSamps:
@@ -694,7 +694,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         '''
 
         # Check if file lists are identical
-        filenames       = map(os.path.basename, self.files)
+        filenames       = list(map(os.path.basename, self.files))
         other_filenames = [ f if filename_modifier is None else filename_modifier(f) for f in map(os.path.basename, sample.files) ]
 
         # Check if we have the same number of files
@@ -730,7 +730,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
         '''
-        from TreeReader import TreeReader
+        from .TreeReader import TreeReader
         logger.debug("Creating TreeReader object for sample '%s'.", self.name)
         return TreeReader( self, *args, **kwargs )
 

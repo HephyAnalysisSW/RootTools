@@ -10,9 +10,7 @@ logger      = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 
-class SampleBase( object ):
-    __metaclass__ = abc.ABCMeta
-
+class SampleBase( object, metaclass=abc.ABCMeta ):
     def __init__(self, name, files, normalization, xSection, isData, color, texName):
         self.name = name
         self.files = files
@@ -33,7 +31,7 @@ class SampleBase( object ):
         norm_before = self.normalization
 
         if factor!=1:
-            #self.files = self.files[:len_before/factor]
+            #self.files = self.files[:len_before//factor]
             self.files = self.files[0::factor]
             if len(self.files)==0:
                 raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
@@ -45,7 +43,7 @@ class SampleBase( object ):
             return
 
         # Keeping track of reduceFile factors
-        factor = len(self.files)/float(len_before)
+        factor = len(self.files)//float(len_before)
         if hasattr(self, "reduce_files_factor"):
             self.reduce_files_factor *= factor
         else:

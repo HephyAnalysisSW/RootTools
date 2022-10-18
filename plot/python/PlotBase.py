@@ -16,9 +16,7 @@ from RootTools.core.TreeVariable import ScalarTreeVariable, TreeVariable
 def make_lambda( string_attribute):
     return lambda event, sample: getattr( event, string_attribute )
 
-class PlotBase( object ):
-    __metaclass__ = abc.ABCMeta
-
+class PlotBase( object, metaclass=abc.ABCMeta ):
     def __init__(self, stack = None, name = None, attributes = None, selectionString = None, weight = None,
                  texX = None, texY = None, read_variables = []):
         ''' Base class for all plots

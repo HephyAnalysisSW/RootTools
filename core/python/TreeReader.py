@@ -108,7 +108,7 @@ class TreeReader( FlatTreeLooperBase ):
             import uuid
             name = str(uuid.uuid4())
             list_to_copy = ROOT.TEventList("tmp","tmp")
-            for i_ev in xrange(*self.eventRange):
+            for i_ev in range(*self.eventRange):
                 list_to_copy.Enter(self._eList.GetEntry(i_ev))
 
             self.sample.chain.GetEntry(list_to_copy.GetEntry(0)) #This is needed to keep branch addresses when running over a few events and >=1 file
@@ -128,7 +128,7 @@ class TreeReader( FlatTreeLooperBase ):
 
             logger.debug("Copying %i events in a loop.", list_to_copy.GetN())
             res = self.sample.chain.GetTree().CloneTree( 0 )
-            for i_event in xrange(list_to_copy.GetN()):
+            for i_event in range(list_to_copy.GetN()):
                 self.sample.chain.GetEntry( list_to_copy.GetEntry(i_event) )
                 res.Fill()
 
@@ -214,9 +214,9 @@ class TreeReader( FlatTreeLooperBase ):
         '''For convinience: Define splitting of sample according to various criteria
         '''
         if maxFileSizeMB is not None:
-            nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
+            nSplit = sum( os.path.getsize(f) for f in self.sample.files ) // ( 1024**2*maxFileSizeMB )
         elif maxNEvents is not None:
-            nSplit = self.nEvents / maxNEvents 
+            nSplit = self.nEvents // maxNEvents 
         elif nJobs is not None:
             nSplit = nJobs
         else:
@@ -226,7 +226,7 @@ class TreeReader( FlatTreeLooperBase ):
         if nSplit==0:
             logger.debug( "Returning full event range because no splitting is specified" )
             return [(0, self.nEvents)]
-        thresholds = [i*self.nEvents/nSplit for i in range(nSplit)]+[self.nEvents]
+        thresholds = [i*self.nEvents//nSplit for i in range(nSplit)]+[self.nEvents]
         return [(thresholds[i], thresholds[i+1]) for i in range(len(thresholds)-1)] 
 
     def setEventRange( self, evtRange ):
@@ -259,7 +259,7 @@ class TreeReader( FlatTreeLooperBase ):
         self.__ttreeFormulas = None
         if self.ttreeFormulas is not None:
             self.__ttreeFormulas = {}
-            for i_name, (name, formula) in enumerate( self.ttreeFormulas.iteritems() ):
+            for i_name, (name, formula) in enumerate( self.ttreeFormulas.items() ):
                 logger.debug( "Create  %s <- ROOT.TTreeFormula('TTF_%i', '%s', chain" % (name, i_name, formula) )
                 self.__ttreeFormulas[name] = ROOT.TTreeFormula("TTF_%i"%i_name, formula, self.sample.chain)
 
@@ -300,7 +300,7 @@ class TreeReader( FlatTreeLooperBase ):
             else:
                 to_be_updated = False
                 
-            for name, formula in self.__ttreeFormulas.iteritems():
+            for name, formula in list(self.__ttreeFormulas.items()):
                 if to_be_updated:
                     formula.UpdateFormulaLeaves()
                     logger.debug( "Updating TTreeFormulas to new file in TChain: %s", self.last_tchain_filename )

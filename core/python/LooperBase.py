@@ -7,9 +7,7 @@ import abc
 import logging
 logger      = logging.getLogger(__name__)
 
-class LooperBase( object ):
-    __metaclass__ = abc.ABCMeta
-
+class LooperBase( object, metaclass=abc.ABCMeta ):
     def __init__(self):
 
         # Internal state for running

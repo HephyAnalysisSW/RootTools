@@ -3,6 +3,7 @@
 
 # Logging
 import logging
+from functools import reduce
 logger = logging.getLogger(__name__)
 
 # Standard imports
@@ -138,7 +139,7 @@ def fill(plots, read_variables = [], sequence=[], ttreeFormulas = {}, max_events
                         #    print "A", plot.name, index[0], index[1], tmp_weight_, weight
                         if sample.__weight is not None: 
                             # https://www.youtube.com/watch?v=8iYdJH1i4rc&feature=youtu.be&t=79 
-                            weight *= reduce( operator.mul, map( operator.methodcaller('__call__', r.event, sample ), sample.__weight) )
+                            weight *= reduce( operator.mul, list(map( operator.methodcaller('__call__', r.event, sample ), sample.__weight)) )
                         weight*=sample_scale_factor
                         #if plot.name.startswith('V_pt'):
                         #    print "B", plot.name, index[0], index[1], tmp_weight_, weight
@@ -285,14 +286,14 @@ def draw(plot, \
         ratio = defaultRatioStyle
 
     # Clone (including any attributes) and add up histos in stack
-    histos = map(lambda l:map(lambda h:helpers.clone(h), l), plot.histos)
+    histos = [[helpers.clone(h) for h in l] for l in plot.histos]
 
     # Add overflow bins for 1D plots
     if isinstance(plot, Plot.Plot):
-	if plot.addOverFlowBin is not None:
-	    for s in histos:
-		for p in s:
-		    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
+        if plot.addOverFlowBin is not None:
+           for s in histos:
+                for p in s:
+                    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
 
     for i, l in enumerate(histos):
 
@@ -313,7 +314,7 @@ def draw(plot, \
             for k in range(j+1, len(l) ):
                 l[j].Add(l[k])
     # Scaling
-    for source, target in scaling.iteritems():
+    for source, target in list(scaling.items()):
         if not ( isinstance(source, int) and isinstance(target, int) ):
             raise ValueError( "Scaling should be {0:1, 1:2, ...}. Expected ints, got %r %r"%( source, target ) ) 
 
@@ -563,7 +564,7 @@ def draw(plot, \
             h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
             h_ratio.GetYaxis().SetNdivisions(505)
 
-            if ratio.has_key('histModifications'):
+            if 'histModifications' in ratio:
                 for modification in ratio['histModifications']: modification(h_ratio)
             drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
             if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale

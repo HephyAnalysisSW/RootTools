@@ -6,7 +6,7 @@ from RootTools.core.helpers import cStringTypeDict, defaultCTypeDict
 def getCTypeString(typeString):
     '''Translate ROOT shortcuts for branch description to proper C types
     '''
-    if typeString in cStringTypeDict.keys():
+    if typeString in list(cStringTypeDict.keys()):
         return cStringTypeDict[typeString]
     else:
         raise Exception( "Cann ot determine C type for type '%s'"%typeString )
@@ -14,7 +14,7 @@ def getCTypeString(typeString):
 def getCDefaultString(typeString):
     '''Get default string from ROOT branch description shortcut
     '''
-    if typeString in defaultCTypeDict.keys():
+    if typeString in list(defaultCTypeDict.keys()):
         return defaultCTypeDict[typeString]
     else:
         raise Exception( "Can not determine C type for type '%s'"%typeString )

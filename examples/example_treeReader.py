@@ -43,7 +43,7 @@ r.start()
 prt = True
 while r.run():
     if prt:
-        print "First event: met %3.2f Jet_pt[0] %3.2f" % ( r.event.met_pt, r.event.Jet_pt[0] )
+        print("First event: met %3.2f Jet_pt[0] %3.2f" % ( r.event.met_pt, r.event.Jet_pt[0] ))
         prt = False
 
     h_inclusive.Fill( r.event.met_pt )

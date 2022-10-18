@@ -33,7 +33,7 @@ class TreeMaker( FlatTreeLooperBase ):
         ''' If strings are empty, there is an issue with memory. Only for debugging purposes.
         '''
         for b in self.branches:
-            print prefix, b.GetName(), repr(b.GetAddress())
+            print((prefix, b.GetName(), repr(b.GetAddress())))
 
     def cloneWithoutCompile(self, externalTree = None):
         ''' make a deep copy of self to e.g. avoid re-compilation of class in a loop. 
