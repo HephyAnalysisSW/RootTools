@@ -3,6 +3,9 @@
 #Abstract Base Class
 import abc
 
+# standard imports
+import os
+
 # Logging
 import logging
 logger      = logging.getLogger(__name__)
@@ -25,6 +28,27 @@ class SampleBase( object ):
         self.isData = isData
         self.color = color
         self.texName = texName if not texName is None else name
+
+    def copy_files(self, target, update = True):
+        if not os.path.exists( target):
+            os.makedirs(target)
+        new_files = []
+        for i_filename, filename in enumerate(self.files):
+            target_file = os.path.join( target, os.path.basename(filename) )
+            if filename.startswith('root://'):
+                import subprocess
+                logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
+                subprocess.call(['xrdcp', '-f', filename, target_file]) 
+                new_files.append( target_file )
+            else:
+                import shutil
+                logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file ) 
+                shutil.copy( filename, target_file )
+                new_files.append( target_file )
+
+        if update:
+            self.files = new_files
+
 
     def reduceFiles( self, factor = 1, to = None ):
         ''' Reduce number of files in the sample

@@ -289,10 +289,10 @@ def draw(plot, \
 
     # Add overflow bins for 1D plots
     if isinstance(plot, Plot.Plot):
-	if plot.addOverFlowBin is not None:
-	    for s in histos:
-		for p in s:
-		    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
+        if plot.addOverFlowBin is not None:
+           for s in histos:
+                for p in s:
+                    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
 
     for i, l in enumerate(histos):
 

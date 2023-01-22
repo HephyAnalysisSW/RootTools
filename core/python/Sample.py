@@ -136,26 +136,6 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def weightString(self):
         return self.__weightStrings if type(self.__weightStrings)==type("") else helpers.combineStrings(self.__weightStrings, stringOperator = "*") 
 
-    def copy_files(self, target, update = True):
-        if not os.path.exists( target):
-            os.makedirs(target)
-        new_files = []
-        for i_filename, filename in enumerate(self.files):
-            target_file = os.path.join( target, os.path.basename(filename) )
-            if filename.startswith('root://'):
-                import subprocess
-                logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
-                subprocess.call(['xrdcp', '-f', filename, target_file]) 
-                new_files.append( target_file )
-            else:
-                import shutil
-                logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file ) 
-                shutil.copy( filename, target_file )
-                new_files.append( target_file )
-
-        if update:
-            self.files = new_files
-
     @classmethod
     def combine(cls, name, samples, texName = None, maxN = None, color = -1):
         '''Make new sample from a list of samples.
