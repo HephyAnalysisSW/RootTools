@@ -68,7 +68,6 @@ class FWLiteReader( LooperBase ):
 
         # Loading files into events (FWLite.Events) member
         self.sample.events = Events(sample.files)
-
         self.nEvents = self.sample.events.size()
         logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)
 

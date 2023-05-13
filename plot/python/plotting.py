@@ -140,8 +140,6 @@ def fill(plots, read_variables = [], sequence=[], ttreeFormulas = {}, max_events
                             # https://www.youtube.com/watch?v=8iYdJH1i4rc&feature=youtu.be&t=79 
                             weight *= reduce( operator.mul, map( operator.methodcaller('__call__', r.event, sample ), sample.__weight) )
                         weight*=sample_scale_factor
-                        #if plot.name.startswith('V_pt'):
-                        #    print "B", plot.name, index[0], index[1], tmp_weight_, weight
 
                         #Get x,y or just x which could be lists
                         TH_fill_args = [ filler( r.event, sample ) for filler in plot.store_fillers ]

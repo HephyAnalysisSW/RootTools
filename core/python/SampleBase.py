@@ -13,6 +13,24 @@ logger      = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 
+
+def copy_file_with_selection( filename, target_file, selection, treeName="Events"):
+    import ROOT
+    # https://root-forum.cern.ch/t/copytree-with-selection/44662/5
+    tmp_directory = ROOT.gDirectory
+
+    logger.info( "Copy file %s -> %s with selection %s", filename, target_file, selection )
+
+    file = ROOT.TFile(filename)
+    tree = file.Get(treeName)
+    tree.SetBranchStatus('*', 1) # read too few bytes: 6 instead of 12
+    file_filtered = ROOT.TFile(target_file, 'recreate')
+    tree_filtered = tree.CopyTree(selection)
+    tree_filtered.Write()
+    file_filtered.Close() # automatically deletes "tree_filtered", too
+    file.Close() # automatically deletes "tree", too
+    tmp_directory.cd()
+
 class SampleBase( object ):
     __metaclass__ = abc.ABCMeta
 
@@ -29,21 +47,34 @@ class SampleBase( object ):
         self.color = color
         self.texName = texName if not texName is None else name
 
-    def copy_files(self, target, update = True):
-        if not os.path.exists( target):
+    def copy_files(self, target, update=True, selection=None):
+        if not os.path.exists(target):
             os.makedirs(target)
+
         new_files = []
         for i_filename, filename in enumerate(self.files):
             target_file = os.path.join( target, os.path.basename(filename) )
             if filename.startswith('root://'):
                 import subprocess
-                logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
-                subprocess.call(['xrdcp', '-f', filename, target_file]) 
+                if selection is None:
+                    logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
+                    subprocess.call(['xrdcp', '-f', filename, target_file]) 
+                else:
+                    tmp_file = os.path.splitext(target_file)[0]+'_tmp.root'
+                    logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, tmp_file )
+                    subprocess.call(['xrdcp', '-f', filename, tmp_file]) 
+                    copy_file_with_selection( tmp_file, target_file, selection=selection )
+                    os.remove(tmp_file)
+
                 new_files.append( target_file )
             else:
                 import shutil
-                logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file ) 
-                shutil.copy( filename, target_file )
+                logger.info( "Copy file %i/%i: %s -> %s", i_filename, len(self.files), filename, target_file )
+                if selection is None: 
+                    shutil.copy( filename, target_file )
+                else:
+                    copy_file_with_selection( filename, target_file, selection=selection )
+                 
                 new_files.append( target_file )
 
         if update:
