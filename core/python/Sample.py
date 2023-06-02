@@ -382,9 +382,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 if DASname.endswith('SIM') or not 'Run20' in DASname:
                     # need to read the proper normalization for MC
                     logger.info("Reading normalization. This is slow, so grab a coffee.")
-                    tmp_sample = cls(name=name, files=[ redirector + f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
+                    tmp_sample = cls(name=name, files=[ redirector + f for f in files], treeName = 'Runs', selectionString = selectionString, weightString = weightString,
                         isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
-                    normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
+                    normalization = tmp_sample.getYieldFromDraw('(1)', 'genEventSumw')['val']
                     logger.info("Got normalization %s", normalization)
                     # still getting number of events
                     dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
