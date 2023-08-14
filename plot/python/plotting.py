@@ -684,14 +684,16 @@ def draw2D(plot, \
     histo.GetYaxis().SetTitle(plot.texY)
 
     # Range on z axis: Start with default
-    if zRange is not None:
-        if not (type(zRange)==type(()) and len(zRange)==2):
-            raise ValueError( "'zRange' must be (zMin, zMax). Got: %r"%zRange )
+    if not zRange=="auto" and not (type(zRange)==type(()) and len(zRange)==2):
+        raise ValueError( "'zRange' must bei either 'auto' or (zMin, zMax) where zMin/zMax can be 'auto'. Got: %r"%zRange )
 
-        if (type(zRange)==type(()) and len(zRange)==2):
-            histo.SetMinimum(zRange[0])
-            histo.SetMaximum(zRange[1])
+    if (type(zRange)==type(()) and len(zRange)==2) and zRange[0] != "auto":
+        histo.SetMinimum(zRange[0])
+    if (type(zRange)==type(()) and len(zRange)==2) and zRange[1] != "auto":
+        histo.SetMaximum(zRange[1])
 
+#    if zRange is not None:
+#        histo.GetZaxis().SetRangeUser( *zRange )
     # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
     histo.GetXaxis().SetTitleFont(43)
     histo.GetYaxis().SetTitleFont(43)
