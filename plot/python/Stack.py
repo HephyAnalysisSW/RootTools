@@ -2,7 +2,7 @@
 Must be a list of lists.
 '''
 # Standard imports
-import uuid
+#import uuid
 import array
 
 # RootTools
@@ -46,13 +46,15 @@ class Stack ( list ):
                     # explicit 1D binning with thresholds
                     if plot.binning.binning_is_explicit:
                         histo = plot.histo_class(\
-                            "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            #"_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            "_".join([plot.name, s.name]), 
                             "_".join([plot.name, s.name]), 
                              len(plot.binning.binning)-1, array.array('d', plot.binning.binning) )
                     # implicit 1D binning 
                     else:
                         histo = plot.histo_class(\
-                            "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            #"_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            "_".join([plot.name, s.name]), 
                             "_".join([plot.name, s.name]), 
                              *plot.binning.binning )
                 elif type(plot.binning)==type([]) or type(plot.binning)==type(()): 
@@ -61,21 +63,24 @@ class Stack ( list ):
                         # both are explicit:
                         if plot.binning[0].binning_is_explicit and plot.binning[1].binning_is_explicit:
                             histo = plot.histo_class(\
-                                "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                                #"_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                                "_".join([plot.name, s.name]), 
                                 "_".join([plot.name, s.name]), 
                                  len(plot.binning[0].binning)-1, array.array('d', plot.binning[0].binning),
                                  len(plot.binning[1].binning)-1, array.array('d', plot.binning[1].binning))
                         # both are implicit:
                         elif not plot.binning[0].binning_is_explicit and not plot.binning[1].binning_is_explicit:
                             histo = plot.histo_class(\
-                                "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                                #"_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                                "_".join([plot.name, s.name]), 
                                 "_".join([plot.name, s.name]), 
                                  *(plot.binning[0].binning+plot.binning[1].binning) )
             
                     # 1D (and 2D) Binning is specified as [n, x0, x1] or [n, x0, x1, m, y0, y1]
                     else:
                         histo = plot.histo_class(\
-                            "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            #"_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            "_".join([plot.name, s.name]), 
                             "_".join([plot.name, s.name]), 
                              *plot.binning )
                 else:

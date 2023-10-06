@@ -258,11 +258,14 @@ class TreeReader( FlatTreeLooperBase ):
 
         self.__ttreeFormulas = None
         if self.ttreeFormulas is not None:
+
+            self.ttreeFormulaManager = ROOT.TTreeFormulaManager() #FIXME testing
+
             self.__ttreeFormulas = {}
             for i_name, (name, formula) in enumerate( self.ttreeFormulas.iteritems() ):
                 logger.debug( "Create  %s <- ROOT.TTreeFormula('TTF_%i', '%s', chain" % (name, i_name, formula) )
                 self.__ttreeFormulas[name] = ROOT.TTreeFormula("TTF_%i"%i_name, formula, self.sample.chain)
-
+                self.ttreeFormulaManager.Add( self.__ttreeFormulas[name] ) #FIXME testing
         return
 
     def _execute(self):  
