@@ -145,7 +145,7 @@ class FWLiteSample ( SampleBase ):
 
         n_cache_files = 0 
         # Don't use the cache on partial queries
-        if dbFile is not None and ( maxN<0 or maxN is None ):
+        if dbFile is not None and ( maxN is None or maxN<0):
             cache = Database(dbFile, "fileCache", ["name"]) 
             n_cache_files = cache.contains({'name':name})
         else:
