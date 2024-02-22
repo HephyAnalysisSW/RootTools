@@ -306,8 +306,9 @@ class TreeReader( FlatTreeLooperBase ):
             for name, formula in self.__ttreeFormulas.iteritems():
                 if to_be_updated:
                     formula.UpdateFormulaLeaves()
-                    logger.debug( "Updating TTreeFormulas to new file in TChain: %s", self.last_tchain_filename )
+                    #logger.debug( "Updating TTreeFormulas to new file in TChain: %s", self.last_tchain_filename )
                 setattr( self.event, name, formula.EvalInstance() )
+                #print ( self.event, name, formula.EvalInstance() )
 
         return 1
 
