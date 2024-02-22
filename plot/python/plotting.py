@@ -10,7 +10,7 @@ import ROOT
 import os
 import copy
 from math import log
-#import uuid
+import uuid
 import operator
 import functools
 
@@ -336,7 +336,7 @@ def draw(plot, \
     if hasattr("ROOT","c1"): 
         del ROOT.c1 
 
-    c1 = ROOT.TCanvas("canvas", "drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
+    c1 = ROOT.TCanvas("canvas"+str(uuid.uuid4()).replace('-','_'), "drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
 
     if ratio is not None:
         c1.Divide(1,2,0,0)
