@@ -13,13 +13,13 @@ logger      = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 
-def copy_file_with_selection( filename, target_file, selection, treeName="Events", overwrite=True):
+def copy_file_with_selection( filename, target_file, selection, treeName="Events", overwrite=True, skipCheck=False):
     import ROOT
     # https://root-forum.cern.ch/t/copytree-with-selection/44662/5
     tmp_directory = ROOT.gDirectory
 
     try:
-        if os.path.exists(target_file) and (not overwrite) and helpers.checkRootFile(target_file, checkForObjects=[treeName] ):
+        if os.path.exists(target_file) and (not overwrite) and ( skipCheck or helpers.checkRootFile(target_file, checkForObjects=[treeName] )):
             logger.info( "Found file %s. Do not copy %s with selection %s", target_file, filename, selection )
             return
     except IOError:
@@ -53,7 +53,7 @@ class SampleBase( object ):
         self.color = color
         self.texName = texName if not texName is None else name
 
-    def copy_files(self, target, update=True, selection=None, overwrite=True):
+    def copy_files(self, target, update=True, selection=None, overwrite=True, skipCheck=False):
         if not os.path.exists(target):
             os.makedirs(target)
 
@@ -73,7 +73,7 @@ class SampleBase( object ):
                     tmp_file = os.path.splitext(target_file)[0]+'_tmp.root'
                     logger.info( "Copy (xrdcp) file %i/%i: %s -> %s", i_filename, len(self.files), filename, tmp_file )
                     subprocess.call(['xrdcp', '-f', filename, tmp_file]) 
-                    copy_file_with_selection( tmp_file, target_file, selection=selection, overwrite=overwrite)
+                    copy_file_with_selection( tmp_file, target_file, selection=selection, overwrite=overwrite, skipCheck=skipCheck)
                     os.remove(tmp_file)
 
                 new_files.append( target_file )
@@ -83,7 +83,7 @@ class SampleBase( object ):
                 if selection is None: 
                     shutil.copy( filename, target_file )
                 else:
-                    copy_file_with_selection( filename, target_file, selection=selection, overwrite=overwrite)
+                    copy_file_with_selection( filename, target_file, selection=selection, overwrite=overwrite, skipCheck=skipCheck)
                  
                 new_files.append( target_file )
 
