@@ -59,7 +59,7 @@ class FWLiteSample ( SampleBase ):
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, color = 0, texName = None, maxN = None):
+    def fromDirectory(cls, name, directory, prefix = '', color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
@@ -79,7 +79,7 @@ class FWLiteSample ( SampleBase ):
         # restrict files 
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
-
+        files = [prefix+f for f in files]
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
