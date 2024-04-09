@@ -33,6 +33,26 @@ def check_equal_(vals):
     else:
         return vals[0]
 
+def get_parent( DAS, instance = 'global', tier=None ):
+    sampleName = DAS.rstrip('/')
+
+    dbs='dasgoclient -query="parent dataset=%s instance=prod/%s"'%(sampleName, instance)
+    dbsOut = os.popen(dbs).readlines()
+    if len(dbsOut)==0:
+        return None
+    elif len(dbsOut)==1:
+        res = dbsOut[0].rstrip()
+    else:
+        logger.warning( "Parent search found %i than one sample. Return first.", len( dbsOut ))
+        for s in dbsOut:
+            logger.warning( "Sample:%s", s )
+        res = dbsOut[0].rstip()
+    if tier is not None and not res.endswith( tier ):
+        logger.info( "Not yet the right tier (%s): %s", tier, res )
+        return get_parent( res, instance=instance, tier=tier)
+    else:
+        return res
+
 class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
     def __init__(self, 
@@ -566,6 +586,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         return cls( name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection, 
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
+
+    def get_parent( self, tier = None, instance = 'global' ):
+        if hasattr( self, "DAS" ):
+            return get_parent( self.DAS, tier=tier, instance=instance)
+        else:
+            logger.error( "Sample %s has no DAS name. Can't get parent", self.name )
+            return
 
     def split(self, n, nSub = None, clear = True, shuffle = False):
         ''' Split sample into n sub-samples
